@@ -106,3 +106,14 @@ function commentReaction(event) {
         }
     });
 }
+
+
+// Attach event listeners for post reaction buttons
+document.querySelectorAll(".like-btn, .dislike-btn").forEach(button => {
+    button.addEventListener("click", postReaction);
+});
+
+// Attach event listeners for comment reaction buttons
+document.querySelectorAll(".comment-like-btn, .comment-dislike-btn").forEach(button => {
+    button.addEventListener("click", commentReaction);
+});
