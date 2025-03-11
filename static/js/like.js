@@ -1,5 +1,5 @@
-// likesAndDislikes handles liking and disliking of posts
-function likesAndDislikes(event) {
+// postReaction handles liking and disliking of posts
+function postReaction(event) {
     event.preventDefault();
     event.stopPropagation();
 
@@ -40,6 +40,60 @@ function likesAndDislikes(event) {
         //update the counters for likes and dislikes
         const likesElement = document.getElementById(`likes-${postID}`);
         const dislikesElement = document.getElementById(`dislikes-${postID}`);
+        if (likesElement && dislikesElement) {
+            likesElement.textContent = data.likes;
+            dislikesElement.textContent = data.dislikes;
+        }
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        if (!error.message.includes("Please sign in")) {
+            alert(error.message);
+        }
+    });
+}
+
+//commentReaction handles liking and disliking of a comment
+function commentReaction(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const button = event.currentTarget;
+    const commentID = button.getAttribute("data-comment-id");
+    const action = button.getAttribute("data-action");
+    const like = action === "like" ? 1 : 0;
+
+    fetch("/commentreact", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            comment_id: parseInt(commentID),
+            like: like,
+        }),
+        credentials: 'include'
+    })
+    .then(response => {
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+            window.location.href = '/login';
+            throw new Error('Session expired. Please sign in again.');
+        }
+
+        if (response.status === 401) {
+            window.location.href = '/login';
+            throw new Error('Please sign in to react to comments');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        const likesElement = document.getElementById(`comment-likes-${commentID}`);
+        const dislikesElement = document.getElementById(`comment-dislikes-${commentID}`);
+        
         if (likesElement && dislikesElement) {
             likesElement.textContent = data.likes;
             dislikesElement.textContent = data.dislikes;
