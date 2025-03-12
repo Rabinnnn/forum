@@ -1,1 +1,4 @@
 *.db
+create_forum_structure.sh
+forum
+
