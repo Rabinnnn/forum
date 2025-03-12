@@ -49,7 +49,6 @@ forum/
 │── README.md                  # Documentation
 ```
 
----
 
 ## 🚀 Features
 
