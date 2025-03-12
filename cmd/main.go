@@ -6,11 +6,12 @@ import (
 	"net/http"
 	"os"
 
+	"forum/internal/auth"
 	"forum/internal/db"
 )
 
 // serveHome handles requests to "/"
-func serveHome(w http.ResponseWriter, r *http.Request) {
+func ServeHome(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "internal/web/templates/index.html") // Updated path
 }
 
@@ -33,7 +34,9 @@ func main() {
 	defer database.Close()
 
 	// Define routes
-	http.HandleFunc("/", serveHome)
+	http.HandleFunc("/", ServeHome)
+
+	http.HandleFunc("/register", auth.RegisterHandler)
 
 	// Serve static files (CSS, JS, images)
 	fs := http.FileServer(http.Dir("internal/web/static")) // Updated path
