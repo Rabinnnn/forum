@@ -17,6 +17,7 @@ go run ./cmd/main.go
 This project is a web-based discussion forum built using **Go** and **SQLite**. It allows users to communicate, create posts, comment, like/dislike posts, and filter content.
 
 ---
+```
 
 ## 🏗 Project Structure
 
@@ -47,6 +48,7 @@ forum/
 │── Dockerfile                 # Docker configuration
 │── go.mod                     # Go module dependencies
 │── README.md                  # Documentation
+```
 ```
 
 
