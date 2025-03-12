@@ -20,15 +20,15 @@
             </button>
             <div class="nav-right">
                 
-                {{if not .IsLoggedIn}}
+                <!-- {{if not .IsLoggedIn}} -->
                     <button class="btn btn-outline" onclick="window.location.href='/login'">
                         <i class="fas fa-sign-in-alt"></i> Login
                     </button>
                     <button class="btn btn-primary" onclick="window.location.href='/register'">
                         <i class="fas fa-user-plus"></i> Register
                     </button>
-                {{else}}
-                <button id="create-post-btn" class="btn btn-primary" onclick="window.location.href='/create'">
+                <!-- {{else}} -->
+                <button id="create-post-btn" class="btn btn-primary" onclick="window.location.href='/posts/create'">
                     <i class="fas fa-plus"></i> Create Post
                 </button>
                     <button class="btn btn-outline" onclick="window.location.href='/profile/{{.CurrentUserID}}'">
