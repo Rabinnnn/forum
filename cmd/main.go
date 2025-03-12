@@ -35,7 +35,7 @@ func main() {
 
 	// Define routes
 	http.HandleFunc("/", ServeHome)
-
+	http.HandleFunc("/login", auth.LoginHandler)
 	http.HandleFunc("/register", auth.RegisterHandler)
 
 	// Serve static files (CSS, JS, images)
