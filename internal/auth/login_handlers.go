@@ -25,9 +25,12 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		defer db.Close()
 
-		// Query the database
+		// Query the database (allow login with either username or email)
 		var storedPassword string
-		err = db.QueryRow("SELECT password FROM users WHERE username = ?", username).Scan(&storedPassword)
+		err = db.QueryRow(
+			"SELECT password FROM users WHERE username = ? OR email = ?",
+			username, username,
+		).Scan(&storedPassword)
 
 		if err == sql.ErrNoRows {
 			data := map[string]string{"GeneralError": "Invalid credentials", "Username": username}
