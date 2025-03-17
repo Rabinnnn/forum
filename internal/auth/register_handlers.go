@@ -4,6 +4,11 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"strings"
+
+	"forum/internal/db"
+
+	"github.com/google/uuid"
 )
 
 // User structure
@@ -68,6 +73,52 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 		if errors.UsernameError != "" || errors.EmailError != "" || errors.PasswordError != "" {
 			log.Println("Validation errors:", errors)
+			tmpl, err := template.ParseFiles("internal/web/templates/register.html")
+			if err != nil {
+				log.Println("Template error:", err)
+				http.Error(w, "Template not found", http.StatusInternalServerError)
+				return
+			}
+			tmpl.Execute(w, PageData{User: user, Errors: errors})
+			return
+		}
+
+		// Get database connection
+		db, err := db.InitializeDB()
+		if err != nil {
+			errors.GeneralError = "Internal server error"
+			tmpl, err := template.ParseFiles("internal/web/templates/register.html")
+			if err != nil {
+				log.Println("Template error:", err)
+				http.Error(w, "Template not found", http.StatusInternalServerError)
+				return
+			}
+			tmpl.Execute(w, PageData{User: user, Errors: errors})
+			return
+		}
+		defer db.Close()
+
+		// Insert the new user
+		_, err = db.Exec(
+			"INSERT INTO users (id, username, email, password) VALUES (?, ?, ?, ?)",
+			uuid.New().String(), // Generate a unique ID
+			username,
+			email,
+			password, // Should  be updated to use bcrypt
+		)
+		if err != nil {
+			if strings.Contains(err.Error(), "UNIQUE constraint failed") {
+				errors.GeneralError = "Username or email already exists"
+				tmpl, err := template.ParseFiles("internal/web/templates/register.html")
+				if err != nil {
+					log.Println("Template error:", err)
+					http.Error(w, "Template not found", http.StatusInternalServerError)
+					return
+				}
+				tmpl.Execute(w, PageData{User: user, Errors: errors})
+				return
+			}
+			errors.GeneralError = "Internal server error"
 			tmpl, err := template.ParseFiles("internal/web/templates/register.html")
 			if err != nil {
 				log.Println("Template error:", err)
