@@ -1,6 +1,9 @@
 package auth
 
-import "database/sql"
+import (
+    "database/sql"
+    "time"
+)
 
 // User represents a forum user
 type User struct {
@@ -9,4 +12,16 @@ type User struct {
     Email      string
     Password   string
     ProfilePic sql.NullString
+}
+
+// Post represents a user's post for profile viewing
+type Post struct {
+    ID        string
+    Title     string
+    Content   string
+    ImagePath string
+    CreatedAt time.Time
+    Likes     int
+    Dislikes  int
+    Comments  int
 }
