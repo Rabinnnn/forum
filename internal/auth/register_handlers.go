@@ -1,4 +1,4 @@
-package auth // handle authentication
+package auth
 
 import (
 	"html/template"
@@ -10,13 +10,6 @@ import (
 
 	"github.com/google/uuid"
 )
-
-// User structure
-type User struct {
-	UserName string
-	Email    string
-	Password string
-}
 
 // Error structure for validation messages
 type Error struct {
@@ -57,7 +50,11 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		confirmPassword := r.FormValue("confirm-password")
 
 		errors := Error{}
-		user := User{UserName: username, Email: email}
+		user := User{
+			Username: username,
+			Email:    email,
+			Password: password,
+		}
 
 		if username == "" {
 			errors.UsernameError = "Username is required."
@@ -104,7 +101,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 			uuid.New().String(), // Generate a unique ID
 			username,
 			email,
-			password, // Should  be updated to use bcrypt
+			password, // Should be updated to use bcrypt
 		)
 		if err != nil {
 			if strings.Contains(err.Error(), "UNIQUE constraint failed") {

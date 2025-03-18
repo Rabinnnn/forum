@@ -1086,3 +1086,67 @@ body {
           margin-bottom: 1rem;
           border: 1px solid #ef9a9a;
       }
+
+.no-posts-container {
+    text-align: center;
+    padding: 2rem;
+    background: #f5f5f5;
+    border-radius: 8px;
+    margin: 2rem auto;
+    max-width: 600px;
+}
+
+.no-posts {
+    font-size: 1.2rem;
+    color: #666;
+    margin-bottom: 1rem;
+}
+
+.create-first-post {
+    font-size: 1.1rem;
+    padding: 0.8rem 1.5rem;
+    margin-top: 1rem;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+    font-size: 0.9rem;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+}
+
+.btn-outline {
+    background-color: transparent;
+    border: 1px solid #007bff;
+    color: #007bff;
+}
+
+.btn-outline:hover {
+    background-color: #007bff;
+    color: white;
+}
+
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.username {
+    font-weight: 500;
+    color: #333;
+}
