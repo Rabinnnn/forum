@@ -2,6 +2,7 @@ package auth
 
 import (
 	"database/sql"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -86,8 +87,12 @@ func (h *AuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		// TODO: Replace with proper password comparison using bcrypt
 		if password == user.Password {
 			CreateSession(w, user.ID)
-			log.Printf("Login successful for user: %s (%s)", user.Username, user.ID)
-			http.Redirect(w, r, "/", http.StatusSeeOther)
+			log.Printf("Login successful for user: %s (ID: %s)", user.Username, user.ID)
+			
+			// Redirect to user's profile
+			profileURL := fmt.Sprintf("/profile/%s", user.ID)
+			log.Printf("Redirecting to: %s", profileURL)
+			http.Redirect(w, r, profileURL, http.StatusSeeOther)
 			return
 		}
 
@@ -169,9 +174,14 @@ func (h *AuthHandler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthHandler) ProfileHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("ProfileHandler called with path: %s", r.URL.Path)
+
 	// Get user ID from URL path
 	userID := strings.TrimPrefix(r.URL.Path, "/profile/")
-	if userID == "" {
+	log.Printf("Extracted userID: %q", userID)
+
+	if userID == "" || userID == "/" {
+		log.Printf("Invalid userID, returning 404")
 		http.NotFound(w, r)
 		return
 	}
@@ -183,9 +193,25 @@ func (h *AuthHandler) ProfileHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
+	if profileUser == nil {
+		log.Printf("No user found with ID: %s", userID)
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	log.Printf("Found user: %+v", profileUser)
 
 	// Get current user session
 	currentUserID, isLoggedIn := GetUserIDFromSession(r)
+	log.Printf("Current user session: userID=%s, isLoggedIn=%v", currentUserID, isLoggedIn)
+
+	// Get user's posts
+	posts, err := h.getUserPosts(userID)
+	if err != nil {
+		log.Printf("Error getting user posts: %v", err)
+		posts = []Post{} // Continue without posts rather than failing
+	}
+	log.Printf("Found %d posts for user", len(posts))
 
 	// Prepare template data
 	data := map[string]interface{}{
@@ -195,7 +221,10 @@ func (h *AuthHandler) ProfileHandler(w http.ResponseWriter, r *http.Request) {
 		"Username":      profileUser.Username,
 		"Email":         profileUser.Email,
 		"ProfilePic":    profileUser.ProfilePic,
+		"Posts":         posts,
 	}
+
+	log.Printf("Rendering template with data: %+v", data)
 
 	// Execute template
 	if err := h.templates.ExecuteTemplate(w, "profile.html", data); err != nil {
@@ -203,4 +232,39 @@ func (h *AuthHandler) ProfileHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error rendering profile", http.StatusInternalServerError)
 		return
 	}
+}
+
+// Add this helper method to get user's posts
+func (h *AuthHandler) getUserPosts(userID string) ([]Post, error) {
+	query := `
+		SELECT 
+			p.id, p.title, p.content, p.image_path, p.created_at,
+			COALESCE((SELECT COUNT(*) FROM likes WHERE post_id = p.id AND is_like = 1), 0) as likes,
+			COALESCE((SELECT COUNT(*) FROM likes WHERE post_id = p.id AND is_like = 0), 0) as dislikes,
+			COALESCE((SELECT COUNT(*) FROM comments WHERE post_id = p.id), 0) as comments
+		FROM posts p
+		WHERE p.user_id = ?
+		ORDER BY p.created_at DESC
+	`
+
+	rows, err := h.db.Query(query, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query user posts: %v", err)
+	}
+	defer rows.Close()
+
+	var posts []Post
+	for rows.Next() {
+		var post Post
+		err := rows.Scan(
+			&post.ID, &post.Title, &post.Content, &post.ImagePath,
+			&post.CreatedAt, &post.Likes, &post.Dislikes, &post.Comments,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan post: %v", err)
+		}
+		posts = append(posts, post)
+	}
+
+	return posts, nil
 }
