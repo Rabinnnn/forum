@@ -54,7 +54,6 @@ func (s *PostService) CreatePost(post *Post) error {
 	return nil
 }
 
-// New method to get all categories
 func (s *PostService) GetCategories() ([]Category, error) {
 	rows, err := s.db.Query("SELECT id, name FROM categories ORDER BY name")
 	if err != nil {
@@ -74,13 +73,12 @@ func (s *PostService) GetCategories() ([]Category, error) {
 	return categories, nil
 }
 
-// Modified GetAllPosts to include category information
 func (s *PostService) GetAllPosts() ([]Post, error) {
 	query := `
 		SELECT 
 			p.id, p.user_id, p.title, p.content, p.image_path, p.created_at,
 			COALESCE(u.username, 'Unknown') as username,
-			COALESCE(u.profile_pic, '') as profile_pic,
+			u.profile_pic,
 			COALESCE((SELECT COUNT(*) FROM likes WHERE post_id = p.id AND is_like = 1), 0) as likes,
 			COALESCE((SELECT COUNT(*) FROM likes WHERE post_id = p.id AND is_like = 0), 0) as dislikes,
 			COALESCE((SELECT COUNT(*) FROM comments WHERE post_id = p.id), 0) as comments
@@ -108,30 +106,95 @@ func (s *PostService) GetAllPosts() ([]Post, error) {
 			return nil, fmt.Errorf("failed to scan post: %v", err)
 		}
 		post.ProfilePic = profilePic
+		post.PostTime = formatPostTime(post.CreatedAt)
 
 		// Get categories for this post
-		catRows, err := s.db.Query(`
-			SELECT c.id, c.name 
-			FROM categories c
-			JOIN post_categories pc ON c.id = pc.category_id
-			WHERE pc.post_id = ?
-			ORDER BY c.name
-		`, post.ID)
+		categories, err := s.getPostCategories(post.ID)
 		if err != nil {
-			return nil, fmt.Errorf("failed to query categories for post %s: %v", post.ID, err)
+			return nil, err
 		}
-		defer catRows.Close()
-
-		for catRows.Next() {
-			var cat Category
-			if err := catRows.Scan(&cat.ID, &cat.Name); err != nil {
-				return nil, fmt.Errorf("failed to scan category: %v", err)
-			}
-			post.Categories = append(post.Categories, cat)
-		}
+		post.Categories = categories
 
 		posts = append(posts, post)
 	}
 
 	return posts, nil
+}
+
+func (s *PostService) GetUserPosts(userID string) ([]Post, error) {
+	query := `
+		SELECT 
+			p.id, p.title, p.content, p.image_path, p.created_at,
+			COALESCE((SELECT COUNT(*) FROM likes WHERE post_id = p.id AND is_like = 1), 0) as likes,
+			COALESCE((SELECT COUNT(*) FROM likes WHERE post_id = p.id AND is_like = 0), 0) as dislikes,
+			COALESCE((SELECT COUNT(*) FROM comments WHERE post_id = p.id), 0) as comments
+		FROM posts p
+		WHERE p.user_id = ?
+		ORDER BY p.created_at DESC
+	`
+
+	rows, err := s.db.Query(query, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query user posts: %v", err)
+	}
+	defer rows.Close()
+
+	var posts []Post
+	for rows.Next() {
+		var post Post
+		err := rows.Scan(
+			&post.ID, &post.Title, &post.Content, &post.ImagePath,
+			&post.CreatedAt, &post.Likes, &post.Dislikes, &post.Comments,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan post: %v", err)
+		}
+		post.PostTime = formatPostTime(post.CreatedAt)
+		posts = append(posts, post)
+	}
+
+	return posts, nil
+}
+
+func (s *PostService) getPostCategories(postID string) ([]Category, error) {
+	rows, err := s.db.Query(`
+		SELECT c.id, c.name 
+		FROM categories c
+		JOIN post_categories pc ON c.id = pc.category_id
+		WHERE pc.post_id = ?
+		ORDER BY c.name
+	`, postID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query categories for post %s: %v", postID, err)
+	}
+	defer rows.Close()
+
+	var categories []Category
+	for rows.Next() {
+		var cat Category
+		if err := rows.Scan(&cat.ID, &cat.Name); err != nil {
+			return nil, fmt.Errorf("failed to scan category: %v", err)
+		}
+		categories = append(categories, cat)
+	}
+
+	return categories, nil
+}
+
+func formatPostTime(t time.Time) string {
+	now := time.Now()
+	diff := now.Sub(t)
+
+	switch {
+	case diff < time.Minute:
+		return "just now"
+	case diff < time.Hour:
+		minutes := int(diff.Minutes())
+		return fmt.Sprintf("%dm ago", minutes)
+	case diff < 24*time.Hour:
+		hours := int(diff.Hours())
+		return fmt.Sprintf("%dh ago", hours)
+	default:
+		return t.Format("Jan 2")
+	}
 }

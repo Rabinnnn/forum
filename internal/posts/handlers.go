@@ -39,9 +39,18 @@ func (h *PostHandler) CreatePostHandler(w http.ResponseWriter, r *http.Request) 
 
 	// GET request - show create post form
 	if r.Method == http.MethodGet {
+		// Get categories for the form
+		categories, err := h.service.GetCategories()
+		if err != nil {
+			log.Printf("Error fetching categories: %v", err)
+			http.Error(w, "Error fetching categories", http.StatusInternalServerError)
+			return
+		}
+
 		data := map[string]interface{}{
-			"IsLoggedIn": true,
-			"UserID":     userID,
+			"IsLoggedIn":  true,
+			"UserID":      userID,
+			"Categories":  categories,
 		}
 
 		if err := h.templates.ExecuteTemplate(w, "createPost.html", data); err != nil {
@@ -63,6 +72,13 @@ func (h *PostHandler) CreatePostHandler(w http.ResponseWriter, r *http.Request) 
 			UserID:  userID,
 			Title:   r.FormValue("title"),
 			Content: r.FormValue("content"),
+		}
+
+		// Handle categories
+		if categories := r.Form["categories[]"]; len(categories) > 0 {
+			for _, catID := range categories {
+				post.Categories = append(post.Categories, Category{ID: parseInt(catID)})
+			}
 		}
 
 		// Handle image upload if present
@@ -150,4 +166,18 @@ func (h *PostHandler) ServeHome(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+func (h *PostHandler) TestPageHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodGet {
+		h.templates.ExecuteTemplate(w, "test_posts.html", nil)
+		return
+	}
+}
+
+// Helper function to parse string to int
+func parseInt(s string) int {
+	var i int
+	fmt.Sscanf(s, "%d", &i)
+	return i
 }
