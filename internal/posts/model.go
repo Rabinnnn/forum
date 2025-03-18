@@ -23,6 +23,7 @@ type Post struct {
 	Likes      int            `json:"likes"`
 	Dislikes   int            `json:"dislikes"`
 	Comments   int            `json:"comments"`
+	PostTime   string         `json:"post_time,omitempty"` // Formatted time for display
 }
 
 type PostServiceInterface interface {
@@ -31,4 +32,6 @@ type PostServiceInterface interface {
 	GetPostByID(id string) (*Post, error)
 	UpdatePost(post *Post) error
 	DeletePost(id string) error
+	GetCategories() ([]Category, error)
+	GetUserPosts(userID string) ([]Post, error)
 }
