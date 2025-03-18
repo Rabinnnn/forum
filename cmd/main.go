@@ -115,7 +115,7 @@ func main() {
 	http.HandleFunc("/logout", logRequest(authHandler.LogoutHandler))
 	http.HandleFunc("/create", logRequest(postHandler.CreatePostHandler))
 	http.HandleFunc("/posts", logRequest(postHandler.GetAllPostsHandler))
-	http.HandleFunc("/profile/", logRequest(authHandler.ProfileHandler))
+	http.HandleFunc("/profile/", logRequest(authHandler.ProfileHandler)) // Note the trailing slash
 
 	// Serve static files (CSS, JS, images)
 	fs := http.FileServer(http.Dir("internal/web/static"))
