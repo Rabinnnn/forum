@@ -22,10 +22,10 @@
                 <button id="create-post-btn" class="btn btn-primary" onclick="window.location.href='/create'">
                     <i class="fas fa-plus"></i> Create Post
                 </button>
-                <button id="create-post-btn" class="btn btn-primary" onclick="window.location.href='#'">
+                <button id="profile-btn" class="btn btn-primary" onclick="window.location.href='/profile/{{.CurrentUserID}}'">
                     <i class="fas fa-user"></i> {{.Username}}
                 </button>
-                <button class="btn btn-primary" onclick="window.location.href='/signout'">
+                <button class="btn btn-primary" onclick="window.location.href='/logout'">
                     <i class="fas fa-sign-out-alt"></i> Logout
                 </button>
               

@@ -175,7 +175,7 @@
                            id="username" 
                            class="input-field {{if .Errors.UsernameError}}error{{end}}"
                            placeholder="Input your name"
-                           value="{{.UserName}}" required>
+                           value="{{.User.Username}}" required>
                     {{if .Errors.UsernameError}}
                     <div class="validation-message">{{.Errors.UsernameError}}</div>
                     {{end}}
@@ -188,7 +188,7 @@
                            id="email" 
                            class="input-field {{if .Errors.EmailError}}error{{end}}"
                            placeholder="Input email"
-                           value="{{.Email}}" required>
+                           value="{{.User.Email}}" required>
                     {{if .Errors.EmailError}}
                     <div class="validation-message">{{.Errors.EmailError}}</div>
                     {{end}}
