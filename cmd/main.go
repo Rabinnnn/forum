@@ -3,14 +3,15 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"forum/internal/auth"
-	"forum/internal/db"
-	"forum/internal/posts"
 	"html/template"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+
+	"forum/internal/auth"
+	"forum/internal/db"
+	"forum/internal/posts"
 )
 
 // Global variables
@@ -84,11 +85,6 @@ func main() {
 		log.Fatalf("Failed to parse templates: %v", err)
 	}
 
-	// Debug: Print all template names
-	for _, t := range templates.Templates() {
-		log.Printf("Loaded template: %s", t.Name())
-	}
-
 	// Ensure the correct number of arguments
 	if len(os.Args) != 1 {
 		fmt.Println("Invalid number of arguments.")
@@ -122,7 +118,7 @@ func main() {
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
 	// Create uploads directory
-	if err := os.MkdirAll("internal/web/static/uploads", 0755); err != nil {
+	if err := os.MkdirAll("internal/web/static/uploads", 0o755); err != nil {
 		log.Printf("Warning: Failed to create uploads directory: %v", err)
 	}
 
