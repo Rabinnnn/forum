@@ -2,11 +2,14 @@ package posts
 
 import (
 	"encoding/json"
+	"fmt"
 	"html/template"
+	"io"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	"forum/internal/auth"
 )
@@ -67,15 +70,19 @@ func (h *PostHandler) CreatePostHandler(w http.ResponseWriter, r *http.Request) 
 		if err == nil {
 			defer file.Close()
 
+			// Change the upload directory to be relative to the static directory
 			uploadDir := filepath.Join("internal", "web", "static", "uploads")
-			if err := os.MkdirAll(uploadDir, 0755); err != nil {
+			if err := os.MkdirAll(uploadDir, 0o755); err != nil {
 				log.Printf("Failed to create uploads directory: %v", err)
 				http.Error(w, "Failed to create uploads directory", http.StatusInternalServerError)
 				return
 			}
 
-			filename := filepath.Join(uploadDir, handler.Filename)
-			f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, 0666)
+			// Generate a unique filename to prevent overwrites
+			filename := fmt.Sprintf("%d_%s", time.Now().UnixNano(), handler.Filename)
+			fullPath := filepath.Join(uploadDir, filename)
+
+			f, err := os.OpenFile(fullPath, os.O_WRONLY|os.O_CREATE, 0o666)
 			if err != nil {
 				log.Printf("Error saving file: %v", err)
 				http.Error(w, "Error saving file", http.StatusInternalServerError)
@@ -83,7 +90,10 @@ func (h *PostHandler) CreatePostHandler(w http.ResponseWriter, r *http.Request) 
 			}
 			defer f.Close()
 
-			post.ImagePath = filepath.Join("uploads", handler.Filename)
+			io.Copy(f, file)
+
+			// Store the path relative to the static directory
+			post.ImagePath = "/static/uploads/" + filename
 		}
 
 		if err := h.service.CreatePost(post); err != nil {

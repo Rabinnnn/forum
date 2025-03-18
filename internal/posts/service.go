@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"time"
+
 	"github.com/google/uuid"
 )
 
@@ -87,7 +88,7 @@ func (s *PostService) GetAllPosts() ([]Post, error) {
 		LEFT JOIN users u ON p.user_id = u.id
 		ORDER BY p.created_at DESC
 	`
-	
+
 	rows, err := s.db.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query posts: %v", err)
@@ -99,7 +100,7 @@ func (s *PostService) GetAllPosts() ([]Post, error) {
 		var post Post
 		var profilePic sql.NullString
 		err := rows.Scan(
-			&post.ID, &post.UserID, &post.Title, &post.Content, &post.ImagePath, 
+			&post.ID, &post.UserID, &post.Title, &post.Content, &post.ImagePath,
 			&post.CreatedAt, &post.Username, &profilePic,
 			&post.Likes, &post.Dislikes, &post.Comments,
 		)
