@@ -2,82 +2,71 @@ package auth
 
 import (
 	"database/sql"
-	"forum/internal/db"
 	"html/template"
 	"log"
 	"net/http"
 	"path/filepath"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 var templates = template.Must(template.ParseGlob(filepath.Join("internal", "web", "templates", "*.html")))
 
-func LoginHandler(w http.ResponseWriter, r *http.Request) {
-	log.Printf("LoginHandler called with method: %s", r.Method)
+func (h *AuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("LoginHandler called with method: %s, URL: %s", r.Method, r.URL.Path)
+
+	if r.Method == http.MethodGet {
+		h.templates.ExecuteTemplate(w, "login.html", nil)
+		return
+	}
 
 	if r.Method == http.MethodPost {
 		r.ParseForm()
 		username := r.FormValue("username")
 		password := r.FormValue("password")
-		
+
 		log.Printf("Login attempt for username: %s", username)
 
-		// Get database connection
-		db, err := db.InitializeDB()
-		if err != nil {
-			log.Printf("Database initialization error: %v", err)
-			data := map[string]interface{}{
-				"Error": "Internal server error",
-				"Username": username,
-			}
-			templates.ExecuteTemplate(w, "login.html", data)
-			return
-		}
-		defer db.Close()
-
-		// Query user
 		var user User
-		err = db.QueryRow(
+		var hashedPassword string
+		err := h.db.QueryRow(
 			"SELECT id, username, email, password FROM users WHERE username = ? OR email = ?",
 			username, username,
-		).Scan(&user.ID, &user.Username, &user.Email, &user.Password)
-
+		).Scan(&user.ID, &user.Username, &user.Email, &hashedPassword)
 		if err != nil {
-			log.Printf("Database query error: %v", err)
 			if err == sql.ErrNoRows {
+				log.Printf("No user found with username/email: %s", username)
 				data := map[string]interface{}{
-					"Error": "Invalid credentials",
+					"Error":    "Invalid credentials",
 					"Username": username,
 				}
-				templates.ExecuteTemplate(w, "login.html", data)
+				h.templates.ExecuteTemplate(w, "login.html", data)
 				return
 			}
-			// Handle other errors...
+			log.Printf("Database error: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
 
-		// Verify password (replace with bcrypt in production)
-		if password == user.Password {
-			log.Printf("Login successful for user: %s", username)
-			
-			// Create session
-			CreateSession(w, user.ID)
-			
-			log.Printf("Session created for user: %s", username)
-			
-			// Redirect to home
-			http.Redirect(w, r, "/", http.StatusSeeOther)
+		// Compare the provided password with the stored hash
+		err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+		if err != nil {
+			log.Printf("Invalid password for user: %s", username)
+			data := map[string]interface{}{
+				"Error":    "Invalid credentials",
+				"Username": username,
+			}
+			h.templates.ExecuteTemplate(w, "login.html", data)
 			return
 		}
 
-		log.Printf("Invalid password for user: %s", username)
-		data := map[string]interface{}{
-			"Error": "Invalid credentials",
-			"Username": username,
-		}
-		templates.ExecuteTemplate(w, "login.html", data)
+		// Password is correct, create session
+		CreateSession(w, user.ID)
+		log.Printf("Login successful for user: %s (ID: %s)", user.Username, user.ID)
+
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 
-	// GET request - show login form
-	templates.ExecuteTemplate(w, "login.html", nil)
+	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 }
