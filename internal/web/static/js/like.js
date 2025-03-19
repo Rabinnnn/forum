@@ -117,3 +117,75 @@ document.querySelectorAll(".like-btn, .dislike-btn").forEach(button => {
 document.querySelectorAll(".comment-like-btn, .comment-dislike-btn").forEach(button => {
     button.addEventListener("click", commentReaction);
 });
+
+// Add this function to handle comment submission
+async function submitComment(event, postId) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const textarea = form.querySelector('textarea');
+    const comment = textarea.value.trim();
+    
+    if (!comment) return;
+
+    try {
+        const response = await fetch('/comments', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                post_id: postId,
+                content: comment
+            }),
+            credentials: 'include'
+        });
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                window.location.href = '/login';
+                return;
+            }
+            throw new Error('Failed to post comment');
+        }
+
+        // Clear the textarea
+        textarea.value = '';
+        
+        // Refresh comments
+        await loadComments(postId);
+        
+        // Update comment count
+        const commentCountElement = document.getElementById(`comments-${postId}`);
+        const currentCount = parseInt(commentCountElement.textContent);
+        commentCountElement.textContent = currentCount + 1;
+        
+    } catch (error) {
+        console.error('Error posting comment:', error);
+        alert('Failed to post comment. Please try again.');
+    }
+}
+
+// Add this function to load comments
+async function loadComments(postId) {
+    try {
+        const response = await fetch(`/comments/post?post_id=${postId}`);
+        if (!response.ok) throw new Error('Failed to fetch comments');
+        
+        const comments = await response.json();
+        const commentsList = document.getElementById(`comments-list-${postId}`);
+        
+        commentsList.innerHTML = comments.map(comment => `
+            <div class="comment">
+                <div class="comment-header">
+                    <span class="comment-author">${comment.username}</span>
+                    <span class="comment-time">${new Date(comment.created_at).toLocaleString()}</span>
+                </div>
+                <p class="comment-content">${comment.content}</p>
+            </div>
+        `).join('');
+        
+    } catch (error) {
+        console.error('Error loading comments:', error);
+    }
+}

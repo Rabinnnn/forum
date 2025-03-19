@@ -71,6 +71,36 @@
                                 </button>
                             </div>
                         </div>
+                        
+                        <!-- Add Comment Section -->
+                        <div class="comments-section" id="comments-section-{{.ID}}">
+                            {{if $.IsLoggedIn}}  <!-- Note the $.IsLoggedIn to access the root context -->
+                                <div class="comment-form-container">
+                                    <form class="comment-form" onsubmit="submitComment(event, '{{.ID}}')">
+                                        <textarea 
+                                            class="comment-input" 
+                                            placeholder="Write a comment..." 
+                                            required
+                                        ></textarea>
+                                        <button type="submit" class="btn btn-primary">Post Comment</button>
+                                    </form>
+                                </div>
+                            {{else}}
+                                <p class="login-prompt">Please <a href="/login">login</a> to comment.</p>
+                            {{end}}
+                            
+                            <div class="comments-list" id="comments-list-{{.ID}}">
+                                {{range .Comments}}
+                                    <div class="comment">
+                                        <div class="comment-header">
+                                            <span class="comment-author">{{.GetUsername}}</span>
+                                            <span class="comment-time">{{.GetCreatedAt.Format "Jan 02, 2006 15:04"}}</span>
+                                        </div>
+                                        <p class="comment-content">{{.GetContent}}</p>
+                                    </div>
+                                {{end}}
+                            </div>
+                        </div>
                     </div>
                 {{end}}
             </div>

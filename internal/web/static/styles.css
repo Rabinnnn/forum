@@ -1150,3 +1150,70 @@ body {
     font-weight: 500;
     color: #333;
 }
+
+.comments-section {
+    margin-top: 20px;
+    padding: 15px;
+    border-top: 1px solid #eee;
+}
+
+.comment-form {
+    margin-bottom: 20px;
+}
+
+.comment-input {
+    width: 100%;
+    min-height: 60px;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    resize: vertical;
+}
+
+.comments-list {
+    margin-top: 20px;
+}
+
+.comment {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 10px;
+}
+
+.comment-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+    font-size: 0.9em;
+}
+
+.comment-author {
+    font-weight: bold;
+    color: #333;
+}
+
+.comment-time {
+    color: #666;
+}
+
+.comment-content {
+    margin: 0;
+    color: #444;
+}
+
+.login-prompt {
+    text-align: center;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+.login-prompt a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.login-prompt a:hover {
+    text-decoration: underline;
+}

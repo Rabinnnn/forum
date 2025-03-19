@@ -150,20 +150,21 @@ func (h *PostHandler) ServeHome(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Prepare template data
-	data := map[string]interface{}{
-		"IsLoggedIn":    isLoggedIn,
-		"CurrentUserID": userID,
-		"Posts":         posts,
+	// For each post, we need to set IsLoggedIn
+	for i := range posts {
+		posts[i].IsLoggedIn = isLoggedIn
 	}
 
-	log.Printf("Rendering home template with data: %+v", data)
+	// Prepare template data
+	data := map[string]interface{}{
+		"IsLoggedIn": isLoggedIn,
+		"UserID":     userID,
+		"Posts":      posts,
+	}
 
-	// Execute template
-	err = h.templates.ExecuteTemplate(w, "index.html", data)
-	if err != nil {
-		log.Printf("Template execution error: %v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := h.templates.ExecuteTemplate(w, "index.html", data); err != nil {
+		log.Printf("Error executing template: %v", err)
+		http.Error(w, "Error rendering page", http.StatusInternalServerError)
 		return
 	}
 }

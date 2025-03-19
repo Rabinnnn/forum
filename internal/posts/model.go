@@ -3,8 +3,6 @@ package posts
 import (
 	"database/sql"
 	"time"
-
-	"forum/internal/comments"
 )
 
 type Category struct {
@@ -12,20 +10,30 @@ type Category struct {
 	Name string `json:"name"`
 }
 
+type CommentData interface {
+	GetID() string
+	GetContent() string
+	GetUserID() string
+	GetCreatedAt() time.Time
+	GetUsername() string
+	GetProfilePic() sql.NullString
+}
+
 type Post struct {
-	ID         string             `json:"id"`
-	UserID     string             `json:"user_id"`
-	Title      string             `json:"title"`
-	Content    string             `json:"content"`
-	Categories []Category         `json:"categories"`
-	ImagePath  string             `json:"image_path"`
-	CreatedAt  time.Time          `json:"created_at"`
-	Username   string             `json:"username"`
-	ProfilePic sql.NullString     `json:"profile_pic"`
-	Likes      int                `json:"likes"`
-	Dislikes   int                `json:"dislikes"`
-	Comments   []comments.Comment `json:"comments"`
-	PostTime   string             `json:"post_time,omitempty"`
+	ID         string         `json:"id"`
+	UserID     string         `json:"user_id"`
+	Title      string         `json:"title"`
+	Content    string         `json:"content"`
+	Categories []Category     `json:"categories"`
+	ImagePath  string         `json:"image_path"`
+	CreatedAt  time.Time      `json:"created_at"`
+	Username   string         `json:"username"`
+	ProfilePic sql.NullString `json:"profile_pic"`
+	Likes      int            `json:"likes"`
+	Dislikes   int            `json:"dislikes"`
+	Comments   []CommentData  `json:"comments"`
+	PostTime   string         `json:"post_time,omitempty"`
+	IsLoggedIn bool
 }
 
 type PostServiceInterface interface {

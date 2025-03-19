@@ -116,7 +116,10 @@ func (s *PostService) GetAllPosts() ([]Post, error) {
 		if err != nil {
 			return nil, err
 		}
-		post.Comments = commentsList // Store full comment details
+		post.Comments = make([]CommentData, len(commentsList))
+		for i, comment := range commentsList {
+			post.Comments[i] = comment // This works because Comment implements CommentData
+		}
 
 		// Fetch categories
 		categories, err := s.getPostCategories(post.ID)
