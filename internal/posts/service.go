@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"forum/internal/comments"
+
 	"github.com/google/uuid"
 )
 
@@ -80,8 +82,7 @@ func (s *PostService) GetAllPosts() ([]Post, error) {
 			COALESCE(u.username, 'Unknown') as username,
 			u.profile_pic,
 			COALESCE((SELECT COUNT(*) FROM likes WHERE post_id = p.id AND is_like = 1), 0) as likes,
-			COALESCE((SELECT COUNT(*) FROM likes WHERE post_id = p.id AND is_like = 0), 0) as dislikes,
-			COALESCE((SELECT COUNT(*) FROM comments WHERE post_id = p.id), 0) as comments
+			COALESCE((SELECT COUNT(*) FROM likes WHERE post_id = p.id AND is_like = 0), 0) as dislikes
 		FROM posts p
 		LEFT JOIN users u ON p.user_id = u.id
 		ORDER BY p.created_at DESC
@@ -94,13 +95,15 @@ func (s *PostService) GetAllPosts() ([]Post, error) {
 	defer rows.Close()
 
 	var posts []Post
+	commentService := comments.NewCommentService(s.db)
+
 	for rows.Next() {
 		var post Post
 		var profilePic sql.NullString
 		err := rows.Scan(
 			&post.ID, &post.UserID, &post.Title, &post.Content, &post.ImagePath,
 			&post.CreatedAt, &post.Username, &profilePic,
-			&post.Likes, &post.Dislikes, &post.Comments,
+			&post.Likes, &post.Dislikes,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan post: %v", err)
@@ -108,12 +111,19 @@ func (s *PostService) GetAllPosts() ([]Post, error) {
 		post.ProfilePic = profilePic
 		post.PostTime = formatPostTime(post.CreatedAt)
 
-		// Get categories for this post
+		// Fetch full comment details
+		commentsList, err := commentService.GetComments(post.ID)
+		if err != nil {
+			return nil, err
+		}
+		post.Comments = commentsList // Store full comment details
+
+		// Fetch categories
 		categories, err := s.getPostCategories(post.ID)
 		if err != nil {
 			return nil, err
 		}
-		post.Categories = categories
+		post.Categories = categories // Store categories
 
 		posts = append(posts, post)
 	}
