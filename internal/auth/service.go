@@ -7,8 +7,6 @@ import (
 	"log"
 	"net/http"
 	"strings"
-
-	"github.com/google/uuid"
 )
 
 // GetUserByID retrieves a user from the database by their ID
@@ -21,7 +19,6 @@ func GetUserByID(db *sql.DB, userID string) (*User, error) {
 		"SELECT id, username, email, COALESCE(profile_pic, '') as profile_pic FROM users WHERE id = ?",
 		userID,
 	).Scan(&user.ID, &user.Username, &user.Email, &profilePic)
-
 	if err != nil {
 		if err == sql.ErrNoRows {
 			log.Printf("No user found with ID: %s", userID)
@@ -48,121 +45,6 @@ func NewAuthHandler(db *sql.DB, templates *template.Template) *AuthHandler {
 type AuthHandler struct {
 	db        *sql.DB
 	templates *template.Template
-}
-
-// LoginHandler handles the login route
-func (h *AuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
-	log.Printf("LoginHandler called with method: %s", r.Method)
-
-	if r.Method == http.MethodGet {
-		h.templates.ExecuteTemplate(w, "login.html", nil)
-		return
-	}
-
-	if r.Method == http.MethodPost {
-		r.ParseForm()
-		username := r.FormValue("username")
-		password := r.FormValue("password")
-
-		var user User
-		err := h.db.QueryRow(
-			"SELECT id, username, email, password FROM users WHERE username = ? OR email = ?",
-			username, username,
-		).Scan(&user.ID, &user.Username, &user.Email, &user.Password)
-
-		if err != nil {
-			if err == sql.ErrNoRows {
-				data := map[string]interface{}{
-					"Error":    "Invalid credentials",
-					"Username": username,
-				}
-				h.templates.ExecuteTemplate(w, "login.html", data)
-				return
-			}
-			log.Printf("Database error: %v", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			return
-		}
-
-		// TODO: Replace with proper password comparison using bcrypt
-		if password == user.Password {
-			CreateSession(w, user.ID)
-			log.Printf("Login successful for user: %s (ID: %s)", user.Username, user.ID)
-			
-			// Redirect to user's profile
-			profileURL := fmt.Sprintf("/profile/%s", user.ID)
-			log.Printf("Redirecting to: %s", profileURL)
-			http.Redirect(w, r, profileURL, http.StatusSeeOther)
-			return
-		}
-
-		data := map[string]interface{}{
-			"Error":    "Invalid credentials",
-			"Username": username,
-		}
-		h.templates.ExecuteTemplate(w, "login.html", data)
-		return
-	}
-
-	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-}
-
-// RegisterHandler handles the register route
-func (h *AuthHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
-	log.Printf("RegisterHandler called with method: %s", r.Method)
-
-	if r.Method == http.MethodGet {
-		h.templates.ExecuteTemplate(w, "register.html", nil)
-		return
-	}
-
-	if r.Method == http.MethodPost {
-		r.ParseForm()
-		username := r.FormValue("username")
-		email := r.FormValue("email")
-		password := r.FormValue("password")
-		confirmPassword := r.FormValue("confirm-password")
-
-		// Validate input
-		if password != confirmPassword {
-			data := map[string]interface{}{
-				"Error":    "Passwords do not match",
-				"Username": username,
-				"Email":    email,
-			}
-			h.templates.ExecuteTemplate(w, "register.html", data)
-			return
-		}
-
-		// Create new user
-		userID := uuid.New().String()
-		_, err := h.db.Exec(
-			"INSERT INTO users (id, username, email, password) VALUES (?, ?, ?, ?)",
-			userID, username, email, password, // TODO: Hash password before storing
-		)
-
-		if err != nil {
-			if strings.Contains(err.Error(), "UNIQUE constraint failed") {
-				data := map[string]interface{}{
-					"Error":    "Username or email already exists",
-					"Username": username,
-					"Email":    email,
-				}
-				h.templates.ExecuteTemplate(w, "register.html", data)
-				return
-			}
-			log.Printf("Database error: %v", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			return
-		}
-
-		// Automatically log in the new user
-		CreateSession(w, userID)
-		http.Redirect(w, r, "/", http.StatusSeeOther)
-		return
-	}
-
-	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 }
 
 // LogoutHandler handles the logout route
