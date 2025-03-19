@@ -1,14 +1,12 @@
 package auth
 
 import (
-	"html/template"
 	"log"
 	"net/http"
 	"strings"
 
-	"forum/internal/db"
-
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // Error structure for validation messages
@@ -25,24 +23,13 @@ type PageData struct {
 	Errors Error
 }
 
-// Serve registration page
-func RegisterHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("RegisterHandler called with method:", r.Method)
-
+func (h *AuthHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
-		log.Println("Serving registration page")
-		tmpl, err := template.ParseFiles("internal/web/templates/register.html")
-		if err != nil {
-			log.Println("Template error:", err)
-			http.Error(w, "Template not found", http.StatusInternalServerError)
-			return
-		}
-		tmpl.Execute(w, nil)
+		h.templates.ExecuteTemplate(w, "register.html", nil)
 		return
 	}
 
 	if r.Method == http.MethodPost {
-		log.Println("Processing registration form")
 		r.ParseForm()
 		username := r.FormValue("username")
 		email := r.FormValue("email")
@@ -53,9 +40,9 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		user := User{
 			Username: username,
 			Email:    email,
-			Password: password,
 		}
 
+		// Basic validation
 		if username == "" {
 			errors.UsernameError = "Username is required."
 		}
@@ -70,63 +57,45 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 		if errors.UsernameError != "" || errors.EmailError != "" || errors.PasswordError != "" {
 			log.Println("Validation errors:", errors)
-			tmpl, err := template.ParseFiles("internal/web/templates/register.html")
-			if err != nil {
-				log.Println("Template error:", err)
-				http.Error(w, "Template not found", http.StatusInternalServerError)
-				return
-			}
-			tmpl.Execute(w, PageData{User: user, Errors: errors})
+			h.templates.ExecuteTemplate(w, "register.html", PageData{User: user, Errors: errors})
 			return
 		}
 
-		// Get database connection
-		db, err := db.InitializeDB()
+		// Hash the password before storing
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 		if err != nil {
+			log.Printf("Error hashing password: %v", err)
 			errors.GeneralError = "Internal server error"
-			tmpl, err := template.ParseFiles("internal/web/templates/register.html")
-			if err != nil {
-				log.Println("Template error:", err)
-				http.Error(w, "Template not found", http.StatusInternalServerError)
-				return
-			}
-			tmpl.Execute(w, PageData{User: user, Errors: errors})
+			h.templates.ExecuteTemplate(w, "register.html", PageData{User: user, Errors: errors})
 			return
 		}
-		defer db.Close()
 
-		// Insert the new user
-		_, err = db.Exec(
+		// Insert the new user with hashed password
+		userID := uuid.New().String()
+		_, err = h.db.Exec(
 			"INSERT INTO users (id, username, email, password) VALUES (?, ?, ?, ?)",
-			uuid.New().String(), // Generate a unique ID
+			userID,
 			username,
 			email,
-			password, // Should be updated to use bcrypt
+			string(hashedPassword), // Store the hashed password
 		)
 		if err != nil {
 			if strings.Contains(err.Error(), "UNIQUE constraint failed") {
 				errors.GeneralError = "Username or email already exists"
-				tmpl, err := template.ParseFiles("internal/web/templates/register.html")
-				if err != nil {
-					log.Println("Template error:", err)
-					http.Error(w, "Template not found", http.StatusInternalServerError)
-					return
-				}
-				tmpl.Execute(w, PageData{User: user, Errors: errors})
+				h.templates.ExecuteTemplate(w, "register.html", PageData{User: user, Errors: errors})
 				return
 			}
+			log.Printf("Database error: %v", err)
 			errors.GeneralError = "Internal server error"
-			tmpl, err := template.ParseFiles("internal/web/templates/register.html")
-			if err != nil {
-				log.Println("Template error:", err)
-				http.Error(w, "Template not found", http.StatusInternalServerError)
-				return
-			}
-			tmpl.Execute(w, PageData{User: user, Errors: errors})
+			h.templates.ExecuteTemplate(w, "register.html", PageData{User: user, Errors: errors})
 			return
 		}
 
-		log.Println("New user registered:", username, email)
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		// Automatically log in the new user
+		CreateSession(w, userID)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
 	}
+
+	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 }
