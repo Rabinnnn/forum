@@ -7,14 +7,16 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+var Globaldb *sql.DB
+
 func InitializeDB() (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", "./forum.db")
+	Globaldb, err := sql.Open("sqlite3", "./forum.db")
 	if err != nil {
 		return nil, err
 	}
 
 	// Create all tables in a single transaction
-	tx, err := db.Begin()
+	tx, err := Globaldb.Begin()
 	if err != nil {
 		return nil, err
 	}
@@ -92,5 +94,5 @@ func InitializeDB() (*sql.DB, error) {
 		return nil, fmt.Errorf("error committing transaction: %v", err)
 	}
 
-	return db, nil
+	return Globaldb, nil
 }

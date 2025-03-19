@@ -14,17 +14,19 @@ function postReaction(event) {
             "Content-Type": "application/json",
         },
         body: JSON.stringify({
-            post_id: parseInt(postID),
+            post_id: "67ff83bd-b6c9-4963-9a4e-cd66b467f05c",
             like: like,
         }),
         credentials: 'include'
     })
     .then(response => {
         const contentType = response.headers.get("content-type");
+        console.log("Content-Type:", contentType); // Print the content type
+
         // if the content type is not json then redirect to login page
         if (!contentType || !contentType.includes("application/json")) {
-            window.location.href = '/login';
-            throw new Error('Session expired. Please sign in again.');
+           // window.location.href = '/login';
+            //throw new Error('Session expired. Please sign in again.');
         }
         // if unauthorized redirect to login
         if (response.status === 401) {

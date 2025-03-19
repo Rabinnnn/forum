@@ -51,9 +51,10 @@
                         {{if .ImagePath}}
                             <img src="{{.ImagePath}}" alt="Post image" class="post-image" onerror="this.onerror=null; this.src='/static/images/placeholder.png';">
                         {{end}}
+                        
                         <div class="post-footer">
                             <div class="action-container">
-                                <button class="action-btn like-btn" data-post-id="{{.ID}}" data-action="like">
+                                <button class="action-btn like-btn" onclick="event.stopPropagation();" data-post-id="{{.ID}}" data-action="like">
                                     <i class="fas fa-heart"></i>
                                     <span class="count" id="likes-{{.ID}}">{{.Likes}}</span>
                                 </button>
@@ -65,7 +66,7 @@
                                 </button>
                             </div>
                             <div class="action-container">
-                                <button class="action-btn dislike-btn" data-post-id="{{.ID}}" data-action="dislike">
+                                <button class="action-btn dislike-btn" onclick="event.stopPropagation();" data-post-id="{{.ID}}" data-action="dislike">
                                     <i class="fas fa-thumbs-down"></i>
                                     <span class="count" id="dislikes-{{.ID}}">{{.Dislikes}}</span>
                                 </button>
