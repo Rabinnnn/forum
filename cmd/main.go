@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	"forum/internal/auth"
 	"forum/internal/comments"
@@ -68,9 +69,10 @@ func ServeHome(w http.ResponseWriter, r *http.Request) {
 // middleware for logging requests
 func logRequest(handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("Request: %s %s", r.Method, r.URL.Path)
-		log.Printf("Cookies: %v", r.Cookies())
+		start := time.Now()
+		log.Printf("Started %s %s", r.Method, r.URL.Path)
 		handler(w, r)
+		log.Printf("Completed %s %s in %v", r.Method, r.URL.Path, time.Since(start))
 	}
 }
 
@@ -113,7 +115,7 @@ func main() {
 	http.HandleFunc("/logout", logRequest(authHandler.LogoutHandler))
 	http.HandleFunc("/create", logRequest(postHandler.CreatePostHandler))
 	http.HandleFunc("/posts", logRequest(postHandler.GetAllPostsHandler))
-	http.HandleFunc("/profile/", logRequest(authHandler.ProfileHandler)) // Note the trailing slash
+	http.HandleFunc("/profile/", logRequest(authHandler.ProfileHandler))
 	http.HandleFunc("/comments", commentHandler.CreateComment)
 	http.HandleFunc("/comments/post", commentHandler.GetCommentsForPost)
 
