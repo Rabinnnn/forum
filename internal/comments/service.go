@@ -58,6 +58,7 @@ func (s *CommentService) GetComments(postID string) ([]Comment, error) {
 		comment.ProfilePic = profilePic
 		comments = append(comments, comment)
 	}
-
+	// Debugging: Print retrieved comments
+	fmt.Printf("Comments for post %s: %+v\n", postID, comments)
 	return comments, nil
 }
