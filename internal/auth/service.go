@@ -239,8 +239,8 @@ func (h *AuthHandler) getUserPosts(userID string) ([]Post, error) {
 	query := `
 		SELECT 
 			p.id, p.title, p.content, p.image_path, p.created_at,
-			COALESCE((SELECT COUNT(*) FROM likes WHERE post_id = p.id AND is_like = 1), 0) as likes,
-			COALESCE((SELECT COUNT(*) FROM likes WHERE post_id = p.id AND is_like = 0), 0) as dislikes,
+			COALESCE((SELECT COUNT(*) FROM likes WHERE post_id = p.id AND like = 1), 0) as likes,
+			COALESCE((SELECT COUNT(*) FROM likes WHERE post_id = p.id AND like = 0), 0) as dislikes,
 			COALESCE((SELECT COUNT(*) FROM comments WHERE post_id = p.id), 0) as comments
 		FROM posts p
 		WHERE p.user_id = ?

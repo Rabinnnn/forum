@@ -91,8 +91,8 @@ func (s *PostService) GetAllPosts() ([]Post, error) {
 			p.id, p.user_id, p.title, p.content, p.image_path, p.created_at,
 			COALESCE(u.username, 'Unknown') as username,
 			u.profile_pic,
-			COALESCE((SELECT COUNT(*) FROM likes WHERE post_id = p.id AND is_like = 1), 0) as likes,
-			COALESCE((SELECT COUNT(*) FROM likes WHERE post_id = p.id AND is_like = 0), 0) as dislikes
+			COALESCE((SELECT COUNT(*) FROM likes WHERE post_id = p.id AND like = 1), 0) as likes,
+			COALESCE((SELECT COUNT(*) FROM likes WHERE post_id = p.id AND like = 0), 0) as dislikes
 		FROM posts p
 		LEFT JOIN users u ON p.user_id = u.id
 		ORDER BY p.created_at DESC
@@ -148,8 +148,8 @@ func (s *PostService) GetUserPosts(userID string) ([]Post, error) {
 	query := `
 		SELECT 
 			p.id, p.title, p.content, p.image_path, p.created_at,
-			COALESCE((SELECT COUNT(*) FROM likes WHERE post_id = p.id AND is_like = 1), 0) as likes,
-			COALESCE((SELECT COUNT(*) FROM likes WHERE post_id = p.id AND is_like = 0), 0) as dislikes,
+			COALESCE((SELECT COUNT(*) FROM likes WHERE post_id = p.id AND like = 1), 0) as likes,
+			COALESCE((SELECT COUNT(*) FROM likes WHERE post_id = p.id AND like = 0), 0) as dislikes,
 			COALESCE((SELECT COUNT(*) FROM comments WHERE post_id = p.id), 0) as comments
 		FROM posts p
 		WHERE p.user_id = ?
