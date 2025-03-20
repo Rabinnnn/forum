@@ -3,7 +3,7 @@ package likes
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
+	//"fmt"
 	"forum/internal/auth"
 	"forum/internal/db"
 	"log"
@@ -78,8 +78,14 @@ func HandleReactions(w http.ResponseWriter, r *http.Request) {
 	if err == sql.ErrNoRows {
 		// Insert new reaction
 		_, err = db.Globaldb.Exec("INSERT INTO likes (user_id, post_id, like) VALUES (?, ?, ?)", userID, req.PostID, req.Like)
+		// if err != nil {
+		// 	http.Error(w, fmt.Sprintf("Database error3: %v", err), http.StatusInternalServerError)
+		// 	return
+		// }
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Database error3: %v", err), http.StatusInternalServerError)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Database error3"})
 			return
 		}
 
@@ -97,6 +103,14 @@ func HandleReactions(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "Database error4", http.StatusInternalServerError)
 				return
 			}
+
+		
+			_, err = db.Globaldb.Exec("UPDATE posts SET likes = likes - 1 WHERE id = ?", req.PostID)
+			if err != nil {
+				http.Error(w, "Database error4.1", http.StatusInternalServerError)
+				return
+			}
+
 		} else {
 			// Update existing reaction
 			_, err = db.Globaldb.Exec("UPDATE likes SET like = ? WHERE user_id = ? AND post_id = ?", req.Like, userID, req.PostID)
@@ -104,6 +118,9 @@ func HandleReactions(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "Database error5", http.StatusInternalServerError)
 				return
 			}
+
+
+			
 		}
 	}
 
