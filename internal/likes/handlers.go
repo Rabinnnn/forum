@@ -133,12 +133,16 @@ func HandleReactions(w http.ResponseWriter, r *http.Request) {
 					http.Error(w, "Database error4.1", http.StatusInternalServerError)
 					return
 				}
+				_, err = db.Globaldb.Exec("UPDATE posts SET dislikes = dislikes - 1 WHERE id = ?", req.PostID)
+
 			}else{
 				_, err = db.Globaldb.Exec("UPDATE posts SET dislikes = dislikes + 1 WHERE id = ?", req.PostID)
 				if err != nil {
 					http.Error(w, "Database error4.1", http.StatusInternalServerError)
 					return
 				}
+				_, err = db.Globaldb.Exec("UPDATE posts SET likes = likes - 1 WHERE id = ?", req.PostID)
+
 			}
 			
 			
