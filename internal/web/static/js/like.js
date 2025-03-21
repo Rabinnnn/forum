@@ -7,6 +7,7 @@ function postReaction(event) {
     const postID = button.getAttribute("data-post-id");
     const action = button.getAttribute("data-action");
     const like = action === "like" ? 1 : 0; // if the action is 'like' assign 1 else 0
+   // const userID = button.getAttribute("data-user-id"); // Add userID from the button
 
     fetch("/react", {
         method: "POST",
@@ -21,16 +22,19 @@ function postReaction(event) {
     })
     .then(response => {
         const contentType = response.headers.get("content-type");
+        console.log("Content-Type:", contentType); // Print the content type
+
         // if the content type is not json then redirect to login page
         if (!contentType || !contentType.includes("application/json")) {
-            window.location.href = '/login';
-            throw new Error('Session expired. Please sign in again.');
+
+           // window.location.href = '/login';
+            //throw new Error('Session expired. Please sign in again.');
         }
         // if unauthorized redirect to login
-        if (response.status === 401) {
-            window.location.href = '/login';
-            throw new Error('Please sign in to react to posts');
-        }
+        // if (response.status === 401) {
+        //     window.location.href = '/login';
+        //     throw new Error('Please sign in to react to posts');
+        // }
         return response.json();
     })
     .then(data => {

@@ -7,14 +7,17 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+var Globaldb *sql.DB
+
 func InitializeDB() (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", "./forum.db")
+	var err error
+	Globaldb, err = sql.Open("sqlite3", "./forum.db")
 	if err != nil {
 		return nil, err
 	}
 
 	// Create all tables in a single transaction
-	tx, err := db.Begin()
+	tx, err := Globaldb.Begin()
 	if err != nil {
 		return nil, err
 	}
@@ -38,6 +41,8 @@ func InitializeDB() (*sql.DB, error) {
 			title TEXT NOT NULL,
 			content TEXT,
 			image_path TEXT,
+			likes INTEGER DEFAULT 0,
+			dislikes INTEGER DEFAULT 0,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			FOREIGN KEY (user_id) REFERENCES users(id)
 		);
@@ -68,10 +73,10 @@ func InitializeDB() (*sql.DB, error) {
 		CREATE INDEX IF NOT EXISTS idx_comments_post_id ON comments(post_id);`,
 
 		`CREATE TABLE IF NOT EXISTS likes (
-			id TEXT PRIMARY KEY NOT NULL,
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			user_id TEXT NOT NULL,
 			post_id TEXT NOT NULL,
-			is_like BOOLEAN NOT NULL,
+			like INTEGER NOT NULL CHECK (like IN (0, 1)), -- 1 for like, 0 for dislike
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			FOREIGN KEY (user_id) REFERENCES users(id),
 			FOREIGN KEY (post_id) REFERENCES posts(id),
@@ -92,5 +97,5 @@ func InitializeDB() (*sql.DB, error) {
 		return nil, fmt.Errorf("error committing transaction: %v", err)
 	}
 
-	return db, nil
+	return Globaldb, nil
 }
