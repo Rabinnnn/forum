@@ -9,7 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"forum/internal/likes"
-
+	"forum/internal/comments"
 	"forum/internal/auth"
 	"forum/internal/db"
 	"forum/internal/posts"
@@ -104,6 +104,8 @@ func main() {
 	postService := posts.NewPostService(database)
 	postHandler := posts.NewPostHandler(postService, templates)
 	authHandler := auth.NewAuthHandler(database, templates)
+	commentHandler := comments.NewCommentHandler(database)
+
 
 	// Register routes
 	http.HandleFunc("/", logRequest(ServeHome))
@@ -113,6 +115,8 @@ func main() {
 	http.HandleFunc("/create", logRequest(postHandler.CreatePostHandler))
 	http.HandleFunc("/posts", logRequest(postHandler.GetAllPostsHandler))
 	http.HandleFunc("/profile/", logRequest(authHandler.ProfileHandler)) // Note the trailing slash
+	http.HandleFunc("/comments", commentHandler.CreateComment)
+	http.HandleFunc("/comments/post", commentHandler.GetCommentsForPost)
 
 	http.HandleFunc("/react", likes.HandleReactions)
 
