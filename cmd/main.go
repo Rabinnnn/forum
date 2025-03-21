@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"forum/internal/auth"
+	"forum/internal/filters"
 	"forum/internal/comments"
 	"forum/internal/db"
 	"forum/internal/posts"
@@ -118,6 +119,13 @@ func main() {
 	http.HandleFunc("/profile/", logRequest(authHandler.ProfileHandler))
 	http.HandleFunc("/comments", commentHandler.CreateComment)
 	http.HandleFunc("/comments/post", commentHandler.GetCommentsForPost)
+
+
+
+	// Initialize category handler
+	categoryHandler := filters.NewCategoryHandler()
+	http.Handle("/categories", categoryHandler)
+	http.Handle("/category", categoryHandler)
 
 	// Serve static files (CSS, JS, images)
 	fs := http.FileServer(http.Dir("internal/web/static"))
