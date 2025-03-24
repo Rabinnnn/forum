@@ -33,32 +33,34 @@ func (s *CommentService) AddComment(postID, userID, content string) error {
 }
 
 // GetComments retrieves all comments for a given post
-func (s *CommentService) GetComments(postID string) ([]Comment, error) {
+func (s *CommentService) GetComments(postID string) ([]Comment, int, error) {
 	rows, err := s.db.Query(`
 		SELECT c.id, c.post_id, c.user_id, c.content, c.created_at, 
-		       u.username, u.profile_pic
+		       u.username, u.profile_pic,
+			   COUNT(*) OVER() AS total_count  -- Get total count
 		FROM comments c
 		JOIN users u ON c.user_id = u.id
 		WHERE c.post_id = ?
 		ORDER BY c.created_at ASC
 	`, postID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query comments: %v", err)
+		return nil, 0, fmt.Errorf("failed to query comments: %v", err)
 	}
 	defer rows.Close()
 
 	var comments []Comment
+	var totalCount int
 	for rows.Next() {
 		var comment Comment
 		var profilePic sql.NullString
-		err := rows.Scan(&comment.ID, &comment.PostID, &comment.UserID, &comment.Content, &comment.CreatedAt, &comment.Username, &profilePic)
+		err := rows.Scan(&comment.ID, &comment.PostID, &comment.UserID, &comment.Content, &comment.CreatedAt, &comment.Username, &profilePic, &totalCount)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan comment: %v", err)
+			return nil, 0, fmt.Errorf("failed to scan comment: %v", err)
 		}
 		comment.ProfilePic = profilePic
 		comments = append(comments, comment)
 	}
 	// Debugging: Print retrieved comments
 	fmt.Printf("Comments for post %s: %+v\n", postID, comments)
-	return comments, nil
+	return comments, totalCount, nil
 }

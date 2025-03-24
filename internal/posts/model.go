@@ -32,6 +32,7 @@ type Post struct {
 	Likes      int            `json:"likes"`
 	Dislikes   int            `json:"dislikes"`
 	Comments   []CommentData  `json:"comments"`
+	CommentCount int		  `json:"comment_count"`
 	PostTime   string         `json:"post_time,omitempty"`
 	IsLoggedIn bool
 }

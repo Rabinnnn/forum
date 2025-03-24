@@ -62,11 +62,18 @@ func (h *CommentHandler) GetCommentsForPost(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	comments, err := h.service.GetComments(postID)
+	comments, totalCount, err := h.service.GetComments(postID)
 	if err != nil {
 		http.Error(w, "Failed to fetch comments", http.StatusInternalServerError)
 		return
 	}
+	// Wrap comments and total count in a structured response
+	response := map[string]interface{}{
+		"total_count": totalCount,
+		"comments":    comments,
+	}
 
-	json.NewEncoder(w).Encode(comments)
+	w.Header().Set("Content-Type", "application/json")
+
+	json.NewEncoder(w).Encode(response)
 }

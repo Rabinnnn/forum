@@ -122,15 +122,16 @@ func (s *PostService) GetAllPosts() ([]Post, error) {
 		post.PostTime = formatPostTime(post.CreatedAt)
 
 		// Fetch full comment details
-		commentsList, err := commentService.GetComments(post.ID)
+		commentsList, commentCount, err := commentService.GetComments(post.ID)
 		if err != nil {
 			return nil, err
 		}
 		post.Comments = make([]CommentData, len(commentsList))
 		for i, comment := range commentsList {
-			post.Comments[i] = comment // This works because Comment implements CommentData
+			post.Comments[i] = comment
 		}
 
+		post.CommentCount = commentCount
 		// Fetch categories
 		categories, err := s.getPostCategories(post.ID)
 		if err != nil {

@@ -93,7 +93,7 @@
                             <div class="action-container">
                                 <button class="action-btn comment-btn" data-post-id="{{.ID}}">
                                     <i class="fas fa-comment"></i>
-                                    <span class="count" id="comments-{{.ID}}">{{.Comments}}</span>
+                                    <span class="count" id="comments-{{.ID}}">{{.CommentCount}}</span>
                                 </button>
                             </div>
                             <div class="action-container">
@@ -105,7 +105,7 @@
                         </div>
                         
                         <!-- Add Comment Section -->
-                        <div class="comments-section" id="comments-section-{{.ID}}">
+                        <div class="comments-section" id="comments-section-{{.ID}}" style="display: none;">
                             {{if $.IsLoggedIn}}  <!-- Note the $.IsLoggedIn to access the root context -->
                                 <div class="comment-form-container">
                                     <form class="comment-form" onsubmit="submitComment(event, '{{.ID}}')">
@@ -165,6 +165,23 @@
         <li><a href="/category?name=Politics">Politics</a></li>
     </ul>
     </div>
+    <!-- JavaScript to Toggle Comment Section -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll(".comment-btn").forEach(button => {
+            button.addEventListener("click", function () {
+                const postID = this.getAttribute("data-post-id");
+                const commentSection = document.getElementById(`comments-section-${postID}`);
+                
+                if (commentSection.style.display === "none") {
+                    commentSection.style.display = "block";
+                } else {
+                    commentSection.style.display = "none";
+                }
+            });
+        });
+    });
+</script>
     <script src="../static/js/like.js"></script>
 </body>
 </html>
