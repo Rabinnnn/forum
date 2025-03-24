@@ -810,8 +810,8 @@ body {
 .categories-filter-container {
     position: fixed;
     top: 150px;
-    left: 300px;
-    width: 250px;
+    left: 100px;
+    width: 180px;
     background-image: url('images/plainGreenish.jpeg');
     background-size: 100% 100%;
     border: 1px solid var(--border-color);
