@@ -134,8 +134,8 @@ func main() {
 	}
 
 	// Start the server
-	log.Printf("Server starting on http://localhost:8080")
-	if err := http.ListenAndServe(":8080", nil); err != nil {
+	log.Printf("Server starting on http://localhost:3000")
+	if err := http.ListenAndServe(":3000", nil); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
 }

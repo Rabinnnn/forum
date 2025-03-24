@@ -56,6 +56,12 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *CommentHandler) GetCommentsForPost(w http.ResponseWriter, r *http.Request) {
+	currentUserID, ok := auth.GetUserIDFromSession(r)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	postID := r.URL.Query().Get("post_id")
 	if postID == "" {
 		http.Error(w, "Missing post ID", http.StatusBadRequest)
@@ -66,6 +72,10 @@ func (h *CommentHandler) GetCommentsForPost(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		http.Error(w, "Failed to fetch comments", http.StatusInternalServerError)
 		return
+	}
+
+	for i := range comments {
+		comments[i].CurrentUserID = currentUserID
 	}
 	// Wrap comments and total count in a structured response
 	response := map[string]interface{}{

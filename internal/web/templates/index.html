@@ -129,7 +129,21 @@
                                             <span class="comment-time">{{.GetCreatedAt.Format "Jan 02, 2006 15:04"}}</span>
                                         </div>
                                         <p class="comment-content">{{.GetContent}}</p>
+                                        {{if eq .UserID $.User.ID}}
+                                        <div class="comment-actions">
+                                            <button onclick="editComment('{{.ID}}')" class="edit-btn">
+                                                <i class="fas fa-edit"></i> Edit
+                                            </button>
+                                            <form class="delete-comment-form" method="POST" action="/deletecomment" style="display: inline;">
+                                                <input type="hidden" name="comment_id" value="{{.ID}}">
+                                                <button type="submit" class="delete-btn">
+                                                    <i class="fas fa-trash"></i> Delete
+                                                </button>
+                                            </form>
+                                        </div>
+                                        {{end}}
                                     </div>
+                                    
                                 {{end}}
                             </div>
                         </div>

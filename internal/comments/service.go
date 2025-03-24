@@ -36,8 +36,8 @@ func (s *CommentService) AddComment(postID, userID, content string) error {
 func (s *CommentService) GetComments(postID string) ([]Comment, int, error) {
 	rows, err := s.db.Query(`
 		SELECT c.id, c.post_id, c.user_id, c.content, c.created_at, 
-		       u.username, u.profile_pic,
-			   COUNT(*) OVER() AS total_count  -- Get total count
+		u.username, u.profile_pic,
+		COUNT(*) OVER() AS total_count  -- Get total count
 		FROM comments c
 		JOIN users u ON c.user_id = u.id
 		WHERE c.post_id = ?
