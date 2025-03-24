@@ -91,7 +91,7 @@ func fetchUserPostsForPosts(userID string) ([]posts.Post, error) {
 		LEFT JOIN categories c ON pc.category_id = c.id
 		LEFT JOIN comments com ON p.id = com.post_id
 		WHERE p.user_id = ?
-		GROUP BY p.id, com.id
+        GROUP BY p.id, com.id
         ORDER BY p.created_at DESC
     `, userID)
 	if err != nil {
@@ -109,6 +109,8 @@ func fetchUserPostsForPosts(userID string) ([]posts.Post, error) {
 		var commentUserID sql.NullString
 		var commentContent sql.NullString
 		var commentCreatedAt sql.NullTime
+		//var commentUsername sql.NullString
+		//var commentProfilePic sql.NullString
 		var profilePic sql.NullString
 		var postTime time.Time
 
@@ -129,6 +131,8 @@ func fetchUserPostsForPosts(userID string) ([]posts.Post, error) {
 			&commentUserID,
 			&commentContent,
 			&commentCreatedAt,
+		//	&commentUsername,
+		//	&commentProfilePic,
 		)
 		if err != nil {
 			return nil, err
@@ -155,33 +159,35 @@ func fetchUserPostsForPosts(userID string) ([]posts.Post, error) {
 			}
 		}
 
-		// If post already exists in the map, append the new comment
+		// If post already exists in the map, retrieve it
 		existingPost, exists := postMap[post.ID]
 		if exists {
 			post = existingPost
 		}
 
 		// Handle NULL comments
-		// if commentID.Valid && commentUserID.Valid && commentContent.Valid && commentCreatedAt.Valid {
-		// 	comment := posts.CommentData{
-		// 		ID:        commentID.String,
-		// 		UserID:    commentUserID.String,
-		// 		Content:   commentContent.String,
-		// 		CreatedAt: commentCreatedAt.Time,
-		// 	}
-		// 	post.Comments = append(post.Comments, comment)
-		// }
+		if commentID.Valid && commentUserID.Valid && commentContent.Valid && commentCreatedAt.Valid {
+			comment := posts.Comment{ 
+				ID:         commentID.String,
+				UserID:     commentUserID.String,
+				Content:    commentContent.String,
+				CreatedAt:  commentCreatedAt.Time,
+			//	Username:   commentUsername.String,
+			//	ProfilePic: commentProfilePic,
+			}
+			post.Comments = append(post.Comments, comment)
+		}
 
 		postMap[post.ID] = post
 	}
 
 	// Convert map to slice
-	var posts []posts.Post
+	var postsList []posts.Post
 	for _, post := range postMap {
-		posts = append(posts, post)
+		postsList = append(postsList, post)
 	}
 
-	return posts, nil
+	return postsList, nil
 }
 
 
