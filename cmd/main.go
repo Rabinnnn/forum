@@ -13,6 +13,7 @@ import (
 	"forum/internal/auth"
 	"forum/internal/comments"
 	"forum/internal/db"
+	"forum/internal/likes"
 	"forum/internal/posts"
 )
 
@@ -22,6 +23,13 @@ var (
 	database  *sql.DB
 )
 
+// Define data structure for the home page
+type HomeData struct {
+	IsLoggedIn bool
+	User       *auth.User
+	Posts      []posts.Post
+}
+
 // serveHome handles requests to "/"
 func ServeHome(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
@@ -29,11 +37,7 @@ func ServeHome(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := struct {
-		IsLoggedIn bool
-		User       *auth.User
-		Posts      []posts.Post
-	}{}
+	data := HomeData{} // Use the named struct instead of anonymous struct
 
 	// Check if user is logged in
 	userID, isLoggedIn := auth.GetUserIDFromSession(r)
@@ -51,18 +55,24 @@ func ServeHome(w http.ResponseWriter, r *http.Request) {
 
 	// Get posts
 	postService := posts.NewPostService(database)
-	posts, err := postService.GetAllPosts()
+	allPosts, err := postService.GetAllPosts()
 	if err != nil {
 		log.Printf("Error fetching posts: %v", err)
+		data.Posts = make([]posts.Post, 0) // Initialize empty slice
 	} else {
-		data.Posts = posts
+		data.Posts = allPosts
 	}
 
-	log.Printf("Template data: IsLoggedIn=%v, User=%+v", data.IsLoggedIn, data.User)
+	// Set headers before writing any response
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
+	// Execute template only once
 	if err := templates.ExecuteTemplate(w, "index.html", data); err != nil {
 		log.Printf("Error executing template: %v", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		if !isResponseWritten(w) {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+		return
 	}
 }
 
@@ -107,6 +117,8 @@ func main() {
 	postHandler := posts.NewPostHandler(postService, templates)
 	authHandler := auth.NewAuthHandler(database, templates)
 	commentHandler := comments.NewCommentHandler(database)
+	likeService := likes.NewLikeService(database)
+	likeHandler := likes.NewLikeHandler(likeService)
 
 	// Register routes
 	http.HandleFunc("/", logRequest(ServeHome))
@@ -118,6 +130,7 @@ func main() {
 	http.HandleFunc("/profile/", logRequest(authHandler.ProfileHandler))
 	http.HandleFunc("/comments", commentHandler.CreateComment)
 	http.HandleFunc("/comments/post", commentHandler.GetCommentsForPost)
+	http.HandleFunc("/react", likeHandler.HandleLike)
 
 	// Serve static files (CSS, JS, images)
 	fs := http.FileServer(http.Dir("internal/web/static"))
@@ -133,4 +146,12 @@ func main() {
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
+}
+
+// Helper function to check if response has been written
+func isResponseWritten(w http.ResponseWriter) bool {
+	rw, ok := w.(interface {
+		Written() bool
+	})
+	return ok && rw.Written()
 }
