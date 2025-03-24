@@ -12,13 +12,17 @@ func CreateSession(w http.ResponseWriter, userID string) {
 	sessionID := uuid.New().String()
 	sessions[sessionID] = userID
 
-	log.Printf("Creating session: ID=%s for user=%s", sessionID, userID)
+	log.Printf("Creating new session - SessionID: %s, UserID: %s", sessionID, userID)
 
 	cookie := &http.Cookie{
 		Name:     "session_id",
 		Value:    sessionID,
 		Path:     "/",
 		HttpOnly: true,
+		// fields to make the cookie more secure and persistent
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+		MaxAge:   86400 * 30, // 30 days
 	}
 	http.SetCookie(w, cookie)
 }
@@ -29,11 +33,12 @@ func GetUserIDFromSession(r *http.Request) (string, bool) {
 		log.Printf("No session cookie found: %v", err)
 		return "", false
 	}
-
-	userID, exists := sessions[cookie.Value]
-	log.Printf("Session lookup: cookie=%s, userID=%s, exists=%v",
-		cookie.Value, userID, exists)
-
+	
+	sessionID := cookie.Value
+	userID, exists := sessions[sessionID]
+	
+	log.Printf("Session check - SessionID: %s, UserID: %s, Exists: %v", sessionID, userID, exists)
+	
 	return userID, exists
 }
 
