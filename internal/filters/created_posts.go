@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"time"
+	"strings"
 
 	"forum/internal/auth"
 	"forum/internal/db"
@@ -81,15 +82,16 @@ func validateUserSession(w http.ResponseWriter, r *http.Request) (string, error)
 func fetchUserPostsForPosts(userID string) ([]posts.Post, error) {
 	rows, err := db.Globaldb.Query(`
         SELECT p.id, p.user_id, p.title, p.content, p.image_path, p.created_at, p.likes, p.dislikes,
-        u.username, 
+        u.username, u.profile_pic,
         GROUP_CONCAT(c.id) AS category_ids, GROUP_CONCAT(c.name) AS category_names,
-        com.content AS latest_comment
+        com.id, com.user_id, com.content, com.created_at
 		FROM posts p
 		JOIN users u ON p.user_id = u.id
 		LEFT JOIN post_categories pc ON p.id = pc.post_id
 		LEFT JOIN categories c ON pc.category_id = c.id
 		LEFT JOIN comments com ON p.id = com.post_id
 		WHERE p.user_id = ?
+		GROUP BY p.id, com.id
         ORDER BY p.created_at DESC
     `, userID)
 	if err != nil {
@@ -97,15 +99,18 @@ func fetchUserPostsForPosts(userID string) ([]posts.Post, error) {
 	}
 	defer rows.Close()
 
-	postMap := make(map[int]posts.Post)
-	var postTime time.Time
+	postMap := make(map[string]posts.Post)
+
 	for rows.Next() {
 		var post posts.Post
 		var categoryIDs sql.NullString
 		var categoryNames sql.NullString
-		// var categoryID sql.NullInt64
-		// var categoryName sql.NullString
-		var latestComment sql.NullString // Declare variable for latest comment
+		var commentID sql.NullString
+		var commentUserID sql.NullString
+		var commentContent sql.NullString
+		var commentCreatedAt sql.NullTime
+		var profilePic sql.NullString
+		var postTime time.Time
 
 		err := rows.Scan(
 			&post.ID,
@@ -116,25 +121,61 @@ func fetchUserPostsForPosts(userID string) ([]posts.Post, error) {
 			&postTime,
 			&post.Likes,
 			&post.Dislikes,
-			&latestComment, // Assign latest comment here
 			&post.Username,
+			&profilePic,
 			&categoryIDs,
 			&categoryNames,
-
-			//&post.ProfilePic,
-			// &categoryID,
-			// &categoryName,
+			&commentID,
+			&commentUserID,
+			&commentContent,
+			&commentCreatedAt,
 		)
 		if err != nil {
 			return nil, err
 		}
+
+		// Convert profile picture safely
+		post.ProfilePic = profilePic
+
+		// Format time
 		post.PostTime = FormatTimeAgo(postTime.Local())
 
-		idNum, _ := strconv.Atoi(post.ID)
-		postMap[idNum] = post
+		// Handle NULL categories
+		if categoryIDs.Valid && categoryNames.Valid {
+			idList := strings.Split(categoryIDs.String, ",")
+			nameList := strings.Split(categoryNames.String, ",")
+			for i := range idList {
+				id, err := strconv.Atoi(strings.TrimSpace(idList[i]))
+				if err == nil && i < len(nameList) {
+					post.Categories = append(post.Categories, posts.Category{
+						ID:   id,
+						Name: strings.TrimSpace(nameList[i]),
+					})
+				}
+			}
+		}
 
+		// If post already exists in the map, append the new comment
+		existingPost, exists := postMap[post.ID]
+		if exists {
+			post = existingPost
+		}
+
+		// Handle NULL comments
+		// if commentID.Valid && commentUserID.Valid && commentContent.Valid && commentCreatedAt.Valid {
+		// 	comment := posts.CommentData{
+		// 		ID:        commentID.String,
+		// 		UserID:    commentUserID.String,
+		// 		Content:   commentContent.String,
+		// 		CreatedAt: commentCreatedAt.Time,
+		// 	}
+		// 	post.Comments = append(post.Comments, comment)
+		// }
+
+		postMap[post.ID] = post
 	}
 
+	// Convert map to slice
 	var posts []posts.Post
 	for _, post := range postMap {
 		posts = append(posts, post)
@@ -142,6 +183,7 @@ func fetchUserPostsForPosts(userID string) ([]posts.Post, error) {
 
 	return posts, nil
 }
+
 
 func fetchUserPostsForLikes(userID string) ([]posts.Post, error) {
 	rows, err := db.Globaldb.Query(`
@@ -200,8 +242,7 @@ func fetchUserPostsForLikes(userID string) ([]posts.Post, error) {
 
 func renderCreatedTemplateForPosts(w http.ResponseWriter, postss []posts.Post, userID string) error {
 	basePath, _ := os.Getwd() // Gets the root directory where the app runs
-	templatePath := filepath.Join(basePath, "web", "templates", "created.html")
-
+	templatePath := filepath.Join(basePath, "internal", "web", "templates", "created.html")
 	tmpl, err := template.ParseFiles(templatePath)
 	if err != nil {
 		http.Error(w, "Error loading template", http.StatusInternalServerError)

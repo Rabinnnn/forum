@@ -36,8 +36,8 @@ func InitializeDB() (*sql.DB, error) {
 		CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);`,
 
 		`CREATE TABLE IF NOT EXISTS posts (
-			id TEXT PRIMARY KEY NOT NULL,
-			user_id TEXT NOT NULL,
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			user_id TEXT,
 			title TEXT NOT NULL,
 			content TEXT,
 			image_path TEXT,
