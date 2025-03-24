@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"forum/internal/likes"
+	"forum/internal/filters"
 	"forum/internal/comments"
 	"forum/internal/auth"
 	"forum/internal/db"
@@ -119,6 +120,8 @@ func main() {
 	http.HandleFunc("/comments/post", commentHandler.GetCommentsForPost)
 
 	http.HandleFunc("/react", likes.HandleReactions)
+	http.HandleFunc("/created", filters.CreatedPosts)
+
 
 
 	// Serve static files (CSS, JS, images)

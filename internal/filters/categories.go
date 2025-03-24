@@ -125,7 +125,7 @@ func (ch *CategoryHandler) handleCreateCategory(w http.ResponseWriter, r *http.R
 }
 
 func (ch *CategoryHandler) handleGetPostsByCategoryName(w http.ResponseWriter, r *http.Request, categoryName string) {
-	posts, err := ch.getPostsByCategoryName(categoryName)
+	postss, err := ch.getPostsByCategoryName(categoryName)
 	if err != nil {
 		log.Printf("Error fetching posts for category %s: %v", categoryName, err)
 		xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrInternalServer)
@@ -147,7 +147,7 @@ func (ch *CategoryHandler) handleGetPostsByCategoryName(w http.ResponseWriter, r
 		CurrentUserID string
 	}{
 		IsLoggedIn:    isLoggedIn,
-		Posts:         posts,
+		Posts:         postss,
 		CurrentUserID: currentUserID,
 	}
 
