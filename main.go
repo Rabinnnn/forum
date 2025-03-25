@@ -118,6 +118,9 @@ func main() {
 	http.HandleFunc("/profile/", logRequest(authHandler.ProfileHandler)) // Note the trailing slash
 	http.HandleFunc("/comments", commentHandler.CreateComment)
 	http.HandleFunc("/comments/post", commentHandler.GetCommentsForPost)
+	http.HandleFunc("/editcomment", comments.HandleEditComment)
+	http.HandleFunc("/deletecomment", comments.HandleDeleteComment)
+
 
 	http.HandleFunc("/react", likes.HandleReactions)
 	http.HandleFunc("/created", filters.CreatedPosts)
