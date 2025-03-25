@@ -11,6 +11,8 @@ type Comment struct {
 	UserID     string         `json:"user_id"`
 	CurrentUserID     string         `json:"current_user_id"`
 	Content    string         `json:"content"`
+	Likes      int			  `json:"likes"`
+	Dislikes   int            `json:"dislikes"`
 	CreatedAt  time.Time      `json:"created_at"`
 	Username   string         `json:"username"`
 	ProfilePic sql.NullString `json:"profile_pic"`
@@ -23,3 +25,5 @@ func (c Comment) GetUserID() string { return c.UserID }
 func (c Comment) GetCreatedAt() time.Time { return c.CreatedAt }
 func (c Comment) GetUsername() string { return c.Username }
 func (c Comment) GetProfilePic() sql.NullString { return c.ProfilePic }
+func (c Comment) GetLikes() int      { return c.Likes }
+func (c Comment) GetDislikes() int      { return c.Dislikes }

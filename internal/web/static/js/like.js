@@ -73,13 +73,14 @@ function commentReaction(event) {
             "Content-Type": "application/json",
         },
         body: JSON.stringify({
-            comment_id: parseInt(commentID),
+            comment_id: commentID,
             like: like,
         }),
         credentials: 'include'
     })
     .then(response => {
         const contentType = response.headers.get("content-type");
+        console.log('content type:', contentType);
         if (!contentType || !contentType.includes("application/json")) {
             window.location.href = '/login';
             throw new Error('Session expired. Please sign in again.');

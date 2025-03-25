@@ -66,6 +66,8 @@ func InitializeDB() (*sql.DB, error) {
 			post_id TEXT NOT NULL,
 			user_id TEXT NOT NULL,
 			content TEXT NOT NULL,
+			likes INTEGER DEFAULT 0,
+			dislikes INTEGER DEFAULT 0,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			FOREIGN KEY (post_id) REFERENCES posts(id),
 			FOREIGN KEY (user_id) REFERENCES users(id)
@@ -75,12 +77,16 @@ func InitializeDB() (*sql.DB, error) {
 		`CREATE TABLE IF NOT EXISTS likes (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			user_id TEXT NOT NULL,
-			post_id TEXT NOT NULL,
-			like INTEGER NOT NULL CHECK (like IN (0, 1)), -- 1 for like, 0 for dislike
+			post_id TEXT,
+			comment_id TEXT,
+			comment_like INTEGER CHECK (comment_like IN (0, 1)), -- 1 for like, 0 for dislike,
+			like INTEGER CHECK (like IN (0, 1)), -- 1 for like, 0 for dislike,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			FOREIGN KEY (user_id) REFERENCES users(id),
 			FOREIGN KEY (post_id) REFERENCES posts(id),
-			UNIQUE(user_id, post_id)
+			FOREIGN KEY (comment_id) REFERENCES comments(id),
+
+			UNIQUE(user_id, post_id, comment_id)
 		);
 		CREATE INDEX IF NOT EXISTS idx_likes_post_id ON likes(post_id);`,
 	}

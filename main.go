@@ -120,6 +120,8 @@ func main() {
 	http.HandleFunc("/comments/post", commentHandler.GetCommentsForPost)
 	http.HandleFunc("/editcomment", comments.HandleEditComment)
 	http.HandleFunc("/deletecomment", comments.HandleDeleteComment)
+	http.HandleFunc("/commentreact", comments.HandleCommentReactions)
+
 
 
 	http.HandleFunc("/react", likes.HandleReactions)

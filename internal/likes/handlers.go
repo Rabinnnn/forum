@@ -3,6 +3,8 @@ package likes
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
+
 	//"fmt"
 	"forum/internal/auth"
 	"forum/internal/db"
@@ -83,6 +85,7 @@ func HandleReactions(w http.ResponseWriter, r *http.Request) {
 		// 	return
 		// }
 		if err != nil {
+			fmt.Println("Error:", err)
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": "Database error3"})

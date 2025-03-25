@@ -35,7 +35,7 @@ func (s *CommentService) AddComment(postID, userID, content string) error {
 // GetComments retrieves all comments for a given post
 func (s *CommentService) GetComments(postID string) ([]Comment, int, error) {
 	rows, err := s.db.Query(`
-		SELECT c.id, c.post_id, c.user_id, c.content, c.created_at, 
+		SELECT c.id, c.post_id, c.user_id, c.content, c.created_at, c.likes, c.dislikes,
 		u.username, u.profile_pic,
 		COUNT(*) OVER() AS total_count  -- Get total count
 		FROM comments c
@@ -53,7 +53,7 @@ func (s *CommentService) GetComments(postID string) ([]Comment, int, error) {
 	for rows.Next() {
 		var comment Comment
 		var profilePic sql.NullString
-		err := rows.Scan(&comment.ID, &comment.PostID, &comment.UserID, &comment.Content, &comment.CreatedAt, &comment.Username, &profilePic, &totalCount)
+		err := rows.Scan(&comment.ID, &comment.PostID, &comment.UserID, &comment.Content, &comment.CreatedAt, &comment.Likes, &comment.Dislikes, &comment.Username, &profilePic, &totalCount)
 		if err != nil {
 			return nil, 0, fmt.Errorf("failed to scan comment: %v", err)
 		}

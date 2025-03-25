@@ -3,10 +3,13 @@ package comments
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
+
 	//"fmt"
 	"forum/internal/db"
 	"log"
 	"net/http"
+
 	//"strconv"
 	"strings"
 
@@ -232,4 +235,98 @@ func HandleDeleteComment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Redirect(w, r, r.Header.Get("Referer"), http.StatusSeeOther)
+}
+
+
+
+func HandleCommentReactions(w http.ResponseWriter, r *http.Request) {
+	userID, _ := auth.GetUserIDFromSession(r)
+
+	if userID == "" {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Unauthorized"})
+		return
+	}
+
+	var req struct {
+		CommentID string `json:"comment_id"`
+		Like      int `json:"like"` // 1 for like, 0 for dislike
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		fmt.Println("Error:", err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid request body"})
+		return
+	}
+
+	if req.Like != 0 && req.Like != 1 {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid reaction type"})
+		return
+	}
+
+	// Check if the user already reacted to this comment by querying comment_reaction
+	var existingIsLike int
+	err := db.Globaldb.QueryRow("SELECT comment_like FROM likes WHERE user_id = ? AND comment_id = ?", userID, req.CommentID).Scan(&existingIsLike)
+	if err != nil && err != sql.ErrNoRows {
+		fmt.Println("Error:", err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Database error (select)"})
+		return
+	}
+
+	if err == sql.ErrNoRows {
+		// No reaction exists—insert a new reaction
+		_, err = db.Globaldb.Exec("INSERT INTO likes (user_id, comment_id, comment_like) VALUES (?, ?, ?)", userID, req.CommentID, req.Like)
+		if err != nil {
+			fmt.Println("Error:", err)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Database error (insert)"})
+			return
+		}
+	} else {
+		if existingIsLike == req.Like {
+			// Same reaction exists; remove it
+			_, err = db.Globaldb.Exec("DELETE FROM likes WHERE user_id = ? AND comment_id = ?", userID, req.CommentID)
+			if err != nil {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(map[string]string{"error": "Database error (delete)"})
+				return
+			}
+		} else {
+			// Reaction exists but is different; update it
+			_, err = db.Globaldb.Exec("UPDATE likes SET comment_like = ? WHERE user_id = ? AND comment_id = ?", req.Like, userID, req.CommentID)
+			if err != nil {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(map[string]string{"error": "Database error (update)"})
+				return
+			}
+		}
+	}
+
+	// Get updated likes and dislikes counts
+	var likes, dislikes int
+	err = db.Globaldb.QueryRow("SELECT likes, dislikes FROM comments WHERE id = ?", req.CommentID).Scan(&likes, &dislikes)
+	if err != nil {
+		fmt.Println("Error:", err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Database error (get counts)"})
+		return
+	}
+
+	// Return success response with updated counts
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success":  true,
+		"likes":    likes,
+		"dislikes": dislikes,
+	})
 }
