@@ -289,6 +289,11 @@ func HandleCommentReactions(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode(map[string]string{"error": "Database error (insert)"})
 			return
 		}
+		if req.Like == 1 {
+			_, err = db.Globaldb.Exec("UPDATE comments SET likes = likes + 1 WHERE id = ?", req.CommentID)
+		} else {
+			_, err = db.Globaldb.Exec("UPDATE comments SET dislikes = dislikes + 1 WHERE id = ?", req.CommentID)
+		}
 	} else {
 		if existingIsLike == req.Like {
 			// Same reaction exists; remove it
@@ -299,6 +304,19 @@ func HandleCommentReactions(w http.ResponseWriter, r *http.Request) {
 				json.NewEncoder(w).Encode(map[string]string{"error": "Database error (delete)"})
 				return
 			}
+			if req.Like == 1{
+				_, err = db.Globaldb.Exec("UPDATE comments SET likes = likes - 1 WHERE id = ?", req.CommentID)
+				if err != nil {
+					http.Error(w, "Database error4.1", http.StatusInternalServerError)
+					return
+				}
+			}else{
+				_, err = db.Globaldb.Exec("UPDATE comments SET dislikes = dislikes - 1 WHERE id = ?", req.CommentID)
+				if err != nil {
+					http.Error(w, "Database error4.2", http.StatusInternalServerError)
+					return
+				}
+			}
 		} else {
 			// Reaction exists but is different; update it
 			_, err = db.Globaldb.Exec("UPDATE likes SET comment_like = ? WHERE user_id = ? AND comment_id = ?", req.Like, userID, req.CommentID)
@@ -307,6 +325,25 @@ func HandleCommentReactions(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusInternalServerError)
 				json.NewEncoder(w).Encode(map[string]string{"error": "Database error (update)"})
 				return
+			}
+
+			
+			if req.Like == 1{
+				_, err = db.Globaldb.Exec("UPDATE comments SET likes = likes + 1 WHERE id = ?", req.CommentID)
+				if err != nil {
+					http.Error(w, "Database error4.1", http.StatusInternalServerError)
+					return
+				}
+				_, err = db.Globaldb.Exec("UPDATE comments SET dislikes = dislikes - 1 WHERE id = ?", req.CommentID)
+
+			}else{
+				_, err = db.Globaldb.Exec("UPDATE comments SET dislikes = dislikes + 1 WHERE id = ?", req.CommentID)
+				if err != nil {
+					http.Error(w, "Database error4.1", http.StatusInternalServerError)
+					return
+				}
+				_, err = db.Globaldb.Exec("UPDATE comments SET likes = likes - 1 WHERE id = ?", req.CommentID)
+
 			}
 		}
 	}
