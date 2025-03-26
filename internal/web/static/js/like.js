@@ -202,9 +202,11 @@ document.querySelectorAll(".comment-like-btn, .comment-dislike-btn").forEach(but
 });
 
 // Add this function to handle comment submission
-async function submitComment(event, postId) {
+// Function to handle comment submission
+async function submitComment(event, postId, currentUser) {
     event.preventDefault();
-    
+    console.log('CURRENT_USER_IDDDDD:', currentUser);
+
     const form = event.target;
     const textarea = form.querySelector('textarea');
     const comment = textarea.value.trim();
@@ -234,44 +236,126 @@ async function submitComment(event, postId) {
 
         // Clear the textarea
         textarea.value = '';
-        
-        // Refresh comments
-        await loadComments(postId);
-        
+
+        console.log("Comment submitted! Now loading comments...");
+
+        // Force refresh comments immediately
+        await loadComments(postId, currentUser);
+
         // Update comment count
         const commentCountElement = document.getElementById(`comments-${postId}`);
-        const currentCount = parseInt(commentCountElement.textContent);
-        commentCountElement.textContent = currentCount + 1;
-        
+        if (commentCountElement) {
+            const currentCount = parseInt(commentCountElement.textContent) || 0;
+            commentCountElement.textContent = currentCount + 1;
+        }
+
     } catch (error) {
         console.error('Error posting comment:', error);
         alert('Failed to post comment. Please try again.');
     }
 }
 
-// Add this function to load comments
-async function loadComments(postId) {
+// Function to load comments
+async function loadComments(postId, currentUser) {
     try {
-        const response = await fetch(`/comments/post?post_id=${postId}`);
-        if (!response.ok) throw new Error('Failed to fetch comments');
-        
-        const comments = await response.json();
+        console.log(`Fetching comments for post ${postId}...`);
+
+        const response = await fetch(`/comments/post?post_id=${postId}&t=${Date.now()}`, {
+            headers: { "Cache-Control": "no-cache" },
+        });
+
+        if (!response.ok) throw new Error(`Failed to fetch comments (Status: ${response.status})`);
+
+        const data = await response.json();
+        console.log("API Response Data:", data);
+
+        if (!data.comments || !Array.isArray(data.comments)) {
+            throw new Error("Invalid response format: Expected an object with a 'comments' array.");
+        }
+
+        const comments = data.comments;
+        //const currentUserId = data.current_user_id; // The logged-in user's ID
+        const comment_list = document.getElementById("comments-list-{{.ID}}");
+        const CURRENT_USER_ID = comment_list ? comment_list.getAttribute("data-user-id") : null;
+
+
         const commentsList = document.getElementById(`comments-list-${postId}`);
-        
-        commentsList.innerHTML = comments.map(comment => `
+        if (!commentsList) {
+            console.error(`Element #comments-list-${postId} not found!`);
+            return;
+        }
+
+        // Update the comments list
+        commentsList.innerHTML = comments.map(comment => {
+            const isAuthor = comment.user_id === currentUser; // Ensure correct key matching
+            console.log('comment.user_id:', comment.user_id);
+            console.log('CURRENT_USER_ID:', currentUser);
+
+            return `
             <div class="comment">
                 <div class="comment-header">
                     <span class="comment-author">${comment.username}</span>
                     <span class="comment-time">${new Date(comment.created_at).toLocaleString()}</span>
                 </div>
-                <p class="comment-content">${comment.content}</p>
+                <p class="comment-content" id="comment-content-${comment.id}">${comment.content}</p>
+
+                ${isAuthor ? `
+                <div class="comment-actions">
+                    <button onclick="editComment('${comment.id}')" class="edit-btn">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                    <form class="delete-comment-form" method="POST" action="/deletecomment" style="display: inline;">
+                        <input type="hidden" name="comment_id" value="${comment.id}">
+                        <button type="submit" class="delete-btn">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </form>
+                </div>
+                ` : ''}
+
+                 <div class="comment-reaction-buttons">
+                <div class="action-container">
+                    <button class="action-btn comment-like-btn" data-comment-id="${comment.id}" data-action="like">
+                        <i class="fas fa-heart"></i>
+                        <span class="count" id="comment-likes-${comment.id}">${comment.likes}</span>
+                    </button>
+                </div>
+                <div class="action-container">
+                    <button class="action-btn comment-dislike-btn" data-comment-id="${comment.id}" data-action="dislike">
+                        <i class="fas fa-thumbs-down"></i>
+                        <span class="count" id="comment-dislikes-${comment.id}">${comment.dislikes}</span>
+                    </button>
+                </div>
             </div>
-        `).join('');
-        
+            </div>
+            `;
+        }).join('');
+
+        console.log(`Loaded ${comments.length} comments.`);
     } catch (error) {
-        console.error('Error loading comments:', error);
+        console.error("Error loading comments:", error);
     }
 }
+
+
+
+// Add event listeners to toggle comment section and load comments
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".comment-btn").forEach(button => {
+        button.addEventListener("click", async function () {
+            const postID = this.getAttribute("data-post-id");
+            const commentSection = document.getElementById(`comments-section-${postID}`);
+            
+            if (commentSection.style.display === "none" || commentSection.style.display === "") {
+                commentSection.style.display = "block";
+               // await loadComments(postID); // Load comments only when opening
+            } else {
+                commentSection.style.display = "none";
+            }
+        });
+    });
+});
+
 
 
 

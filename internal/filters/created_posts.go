@@ -84,7 +84,8 @@ func fetchUserPostsForPosts(userID string) ([]posts.Post, error) {
         SELECT p.id, p.user_id, p.title, p.content, p.image_path, p.created_at, p.likes, p.dislikes,
         u.username, u.profile_pic,
         GROUP_CONCAT(c.id) AS category_ids, GROUP_CONCAT(c.name) AS category_names,
-        com.id, com.user_id, com.content, com.created_at
+        com.id, com.user_id, com.content, com.created_at,
+    	(SELECT COUNT(*) FROM comments WHERE post_id = p.id) AS total_comments  -- Correct count of all comments per post
 		FROM posts p
 		JOIN users u ON p.user_id = u.id
 		LEFT JOIN post_categories pc ON p.id = pc.post_id
@@ -113,6 +114,8 @@ func fetchUserPostsForPosts(userID string) ([]posts.Post, error) {
 		//var commentProfilePic sql.NullString
 		var profilePic sql.NullString
 		var postTime time.Time
+		var totalCount int
+
 
 		err := rows.Scan(
 			&post.ID,
@@ -131,6 +134,7 @@ func fetchUserPostsForPosts(userID string) ([]posts.Post, error) {
 			&commentUserID,
 			&commentContent,
 			&commentCreatedAt,
+			&totalCount,
 		//	&commentUsername,
 		//	&commentProfilePic,
 		)
@@ -138,6 +142,7 @@ func fetchUserPostsForPosts(userID string) ([]posts.Post, error) {
 			return nil, err
 		}
 
+		post.CommentCount = totalCount
 		// Convert profile picture safely
 		post.ProfilePic = profilePic
 
