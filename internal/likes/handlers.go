@@ -8,13 +8,16 @@ import (
 	//"fmt"
 	"forum/internal/auth"
 	"forum/internal/db"
+	"forum/internal/xerrors"
+
 	"log"
 	"net/http"
 )
 
 func HandleReactions(w http.ResponseWriter, r *http.Request) {
 	if db.Globaldb == nil {
-		http.Error(w, "Database not initialized", http.StatusInternalServerError)
+		//http.Error(w, "Database not initialized", http.StatusInternalServerError)
+		xerrors.RenderErrorPage(w, http.StatusInternalServerError, "Database not initialized" )
 		return
 	}
 
@@ -25,19 +28,23 @@ func HandleReactions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		//http.Error(w, "Invalid request body", http.StatusBadRequest)
+		xerrors.RenderErrorPage(w, http.StatusBadRequest, xerrors.ErrBadRequest )
 		return
 	}
 
 	// Validate PostID
 	if req.PostID < 0 {
-		http.Error(w, "Missing post ID", http.StatusBadRequest)
+		//http.Error(w, "Missing post ID", http.StatusBadRequest)
+		xerrors.RenderErrorPage(w, http.StatusBadRequest, xerrors.ErrBadRequest )
+
 		return
 	}
 
 	userID, isLoggedIn := auth.GetUserIDFromSession(r)
 	if userID == "" || !isLoggedIn{
-		http.Error(w, "Unauthorized: Missing userID", http.StatusUnauthorized)
+		//http.Error(w, "Unauthorized: Missing userID", http.StatusUnauthorized)
+		xerrors.RenderErrorPage(w, http.StatusUnauthorized, xerrors.ErrUnauthorized )
 		return
 	}
 
@@ -55,17 +62,20 @@ func HandleReactions(w http.ResponseWriter, r *http.Request) {
 	err := db.Globaldb.QueryRow("SELECT user_id FROM posts WHERE id = ?", req.PostID).Scan(&postOwnerID)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			http.Error(w, "Post not found", http.StatusNotFound)
+			//http.Error(w, "Post not found", http.StatusNotFound)
+			xerrors.RenderErrorPage(w, http.StatusNotFound, xerrors.ErrNotFound )
 			return
 		}
-		http.Error(w, "Failed to fetch user ID", http.StatusInternalServerError)
+		//http.Error(w, "Failed to fetch user ID", http.StatusInternalServerError)
+		xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrInternalServer )
 		log.Println("Database error1:", err)
 		return
 	}
 
 	// Ensure like value is valid (0 or 1)
 	if req.Like != 0 && req.Like != 1 {
-		http.Error(w, "Invalid reaction type", http.StatusBadRequest)
+		//http.Error(w, "Invalid reaction type", http.StatusBadRequest)
+		xerrors.RenderErrorPage(w, http.StatusBadRequest, xerrors.ErrBadRequest )
 		return
 	}
 
@@ -73,7 +83,8 @@ func HandleReactions(w http.ResponseWriter, r *http.Request) {
 	var existingLike int
 	err = db.Globaldb.QueryRow("SELECT like FROM likes WHERE user_id = ? AND post_id = ?", userID, req.PostID).Scan(&existingLike)
 	if err != nil && err != sql.ErrNoRows {
-		http.Error(w, "Database error2", http.StatusInternalServerError)
+		//http.Error(w, "Database error2", http.StatusInternalServerError)
+		xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrInternalServer )
 		return
 	}
 
@@ -102,7 +113,8 @@ func HandleReactions(w http.ResponseWriter, r *http.Request) {
 			// User is unliking or undisliking
 			_, err = db.Globaldb.Exec("DELETE FROM likes WHERE user_id = ? AND post_id = ?", userID, req.PostID)
 			if err != nil {
-				http.Error(w, "Database error4", http.StatusInternalServerError)
+				//http.Error(w, "Database error4", http.StatusInternalServerError)
+				xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrInternalServer)
 				return
 			}
 
@@ -110,13 +122,15 @@ func HandleReactions(w http.ResponseWriter, r *http.Request) {
 			if req.Like == 1{
 				_, err = db.Globaldb.Exec("UPDATE posts SET likes = likes - 1 WHERE id = ?", req.PostID)
 				if err != nil {
-					http.Error(w, "Database error4.1", http.StatusInternalServerError)
+					//http.Error(w, "Database error4.1", http.StatusInternalServerError)
+					xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrInternalServer )
 					return
 				}
 			}else{
 				_, err = db.Globaldb.Exec("UPDATE posts SET dislikes = dislikes - 1 WHERE id = ?", req.PostID)
 				if err != nil {
-					http.Error(w, "Database error4.2", http.StatusInternalServerError)
+					//http.Error(w, "Database error4.2", http.StatusInternalServerError)
+					xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrInternalServer )
 					return
 				}
 			}
@@ -126,14 +140,16 @@ func HandleReactions(w http.ResponseWriter, r *http.Request) {
 			// Update existing reaction
 			_, err = db.Globaldb.Exec("UPDATE likes SET like = ? WHERE user_id = ? AND post_id = ?", req.Like, userID, req.PostID)
 			if err != nil {
-				http.Error(w, "Database error5", http.StatusInternalServerError)
+				//http.Error(w, "Database error5", http.StatusInternalServerError)
+				xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrInternalServer )
 				return
 			}
 
 			if req.Like == 1{
 				_, err = db.Globaldb.Exec("UPDATE posts SET likes = likes + 1 WHERE id = ?", req.PostID)
 				if err != nil {
-					http.Error(w, "Database error4.1", http.StatusInternalServerError)
+					//http.Error(w, "Database error4.1", http.StatusInternalServerError)
+					xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrInternalServer )
 					return
 				}
 				_, err = db.Globaldb.Exec("UPDATE posts SET dislikes = dislikes - 1 WHERE id = ?", req.PostID)
@@ -141,7 +157,8 @@ func HandleReactions(w http.ResponseWriter, r *http.Request) {
 			}else{
 				_, err = db.Globaldb.Exec("UPDATE posts SET dislikes = dislikes + 1 WHERE id = ?", req.PostID)
 				if err != nil {
-					http.Error(w, "Database error4.1", http.StatusInternalServerError)
+				//	http.Error(w, "Database error4.1", http.StatusInternalServerError)
+				xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrInternalServer )
 					return
 				}
 				_, err = db.Globaldb.Exec("UPDATE posts SET likes = likes - 1 WHERE id = ?", req.PostID)
@@ -156,7 +173,8 @@ func HandleReactions(w http.ResponseWriter, r *http.Request) {
 	var likes, dislikes int
 	err = db.Globaldb.QueryRow("SELECT likes, dislikes FROM posts WHERE id = ?", req.PostID).Scan(&likes, &dislikes)
 	if err != nil {
-		http.Error(w, "Database error6", http.StatusInternalServerError)
+		//http.Error(w, "Database error6", http.StatusInternalServerError)
+		xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrInternalServer )
 		return
 	}
 

@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+	"forum/internal/xerrors"
 
 	"forum/internal/auth"
 )
@@ -43,7 +44,9 @@ func (h *PostHandler) CreatePostHandler(w http.ResponseWriter, r *http.Request) 
 		categories, err := h.service.GetCategories()
 		if err != nil {
 			log.Printf("Error fetching categories: %v", err)
-			http.Error(w, "Error fetching categories", http.StatusInternalServerError)
+			//http.Error(w, "Error fetching categories", http.StatusInternalServerError)
+			xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrInternalServer )
+
 			return
 		}
 
@@ -55,7 +58,10 @@ func (h *PostHandler) CreatePostHandler(w http.ResponseWriter, r *http.Request) 
 
 		if err := h.templates.ExecuteTemplate(w, "createPost.html", data); err != nil {
 			log.Printf("Error executing template: %v", err)
-			http.Error(w, "Error rendering page", http.StatusInternalServerError)
+			//http.Error(w, "Error rendering page", http.StatusInternalServerError)			xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrInternalServer )
+			xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrInternalServer )
+
+
 		}
 		return
 	}
@@ -64,7 +70,9 @@ func (h *PostHandler) CreatePostHandler(w http.ResponseWriter, r *http.Request) 
 		// Parse the form
 		if err := r.ParseMultipartForm(10 << 20); err != nil {
 			log.Printf("Error parsing form: %v", err)
-			http.Error(w, "Error parsing form", http.StatusBadRequest)
+		//	http.Error(w, "Error parsing form", http.StatusBadRequest)
+			xerrors.RenderErrorPage(w, http.StatusBadRequest, xerrors.ErrBadRequest )
+
 			return
 		}
 
@@ -90,7 +98,8 @@ func (h *PostHandler) CreatePostHandler(w http.ResponseWriter, r *http.Request) 
 			uploadDir := filepath.Join("internal", "web", "static", "uploads")
 			if err := os.MkdirAll(uploadDir, 0o755); err != nil {
 				log.Printf("Failed to create uploads directory: %v", err)
-				http.Error(w, "Failed to create uploads directory", http.StatusInternalServerError)
+				//http.Error(w, "Failed to create uploads directory", http.StatusInternalServerError)
+				xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrInternalServer )
 				return
 			}
 
@@ -101,7 +110,8 @@ func (h *PostHandler) CreatePostHandler(w http.ResponseWriter, r *http.Request) 
 			f, err := os.OpenFile(fullPath, os.O_WRONLY|os.O_CREATE, 0o666)
 			if err != nil {
 				log.Printf("Error saving file: %v", err)
-				http.Error(w, "Error saving file", http.StatusInternalServerError)
+				//http.Error(w, "Error saving file", http.StatusInternalServerError)
+				xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrInternalServer )
 				return
 			}
 			defer f.Close()
@@ -114,7 +124,9 @@ func (h *PostHandler) CreatePostHandler(w http.ResponseWriter, r *http.Request) 
 
 		if err := h.service.CreatePost(post); err != nil {
 			log.Printf("Error creating post: %v", err)
-			http.Error(w, "Error creating post", http.StatusInternalServerError)
+			//http.Error(w, "Error creating post", http.StatusInternalServerError)
+			xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrInternalServer )
+
 			return
 		}
 
@@ -127,7 +139,8 @@ func (h *PostHandler) GetAllPostsHandler(w http.ResponseWriter, r *http.Request)
 	posts, err := h.service.GetAllPosts()
 	if err != nil {
 		log.Printf("Error fetching posts: %v", err)
-		http.Error(w, "Error fetching posts", http.StatusInternalServerError)
+		//http.Error(w, "Error fetching posts", http.StatusInternalServerError)
+		xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrInternalServer )
 		return
 	}
 
@@ -146,7 +159,8 @@ func (h *PostHandler) ServeHome(w http.ResponseWriter, r *http.Request) {
 	posts, err := h.service.GetAllPosts()
 	if err != nil {
 		log.Printf("Error fetching posts: %v", err)
-		http.Error(w, "Error fetching posts", http.StatusInternalServerError)
+		//http.Error(w, "Error fetching posts", http.StatusInternalServerError)
+		xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrInternalServer )
 		return
 	}
 
@@ -164,7 +178,8 @@ func (h *PostHandler) ServeHome(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.templates.ExecuteTemplate(w, "index.html", data); err != nil {
 		log.Printf("Error executing template: %v", err)
-		http.Error(w, "Error rendering page", http.StatusInternalServerError)
+		//http.Error(w, "Error rendering page", http.StatusInternalServerError)
+		xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrInternalServer )
 		return
 	}
 }

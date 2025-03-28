@@ -4,8 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-
-	//"fmt"
+	"forum/internal/xerrors"
 	"forum/internal/db"
 	"log"
 	"net/http"
@@ -42,19 +41,22 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		//http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		xerrors.RenderErrorPage(w, http.StatusBadRequest, xerrors.ErrBadRequest )
 		return
 	}
 
 	// Validate input
 	if input.Content == "" || input.PostID == "" {
-		http.Error(w, "Missing required fields", http.StatusBadRequest)
+		//http.Error(w, "Missing required fields", http.StatusBadRequest)
+		xerrors.RenderErrorPage(w, http.StatusBadRequest, xerrors.ErrBadRequest )
 		return
 	}
 
 	// Create the comment
 	if err := h.service.AddComment(input.PostID, userID, input.Content); err != nil {
-		http.Error(w, "Failed to create comment", http.StatusInternalServerError)
+		//http.Error(w, "Failed to create comment", http.StatusInternalServerError)
+		xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrInternalServer )
 		return
 	}
 
@@ -68,19 +70,23 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 func (h *CommentHandler) GetCommentsForPost(w http.ResponseWriter, r *http.Request) {
 	currentUserID, ok := auth.GetUserIDFromSession(r)
 	if !ok {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		//http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		xerrors.RenderErrorPage(w, http.StatusUnauthorized, xerrors.ErrUnauthorized)
 		return
 	}
 
 	postID := r.URL.Query().Get("post_id")
 	if postID == "" {
-		http.Error(w, "Missing post ID", http.StatusBadRequest)
+		//http.Error(w, "Missing post ID", http.StatusBadRequest)
+		xerrors.RenderErrorPage(w, http.StatusBadRequest, xerrors.ErrBadRequest )
+
 		return
 	}
 
 	comments, totalCount, err := h.service.GetComments(postID)
 	if err != nil {
-		http.Error(w, "Failed to fetch comments", http.StatusInternalServerError)
+		//http.Error(w, "Failed to fetch comments", http.StatusInternalServerError)
+		xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrInternalServer )
 		return
 	}
 
@@ -104,12 +110,14 @@ func HandleEditComment(w http.ResponseWriter, r *http.Request) {
 	userID, _ := auth.GetUserIDFromSession(r)
 
 	if userID == "" {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		//http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		xerrors.RenderErrorPage(w, http.StatusUnauthorized, xerrors.ErrUnauthorized )
 		return
 	}
 
 	if err := r.ParseForm(); err != nil {
-		http.Error(w, "Bad request", http.StatusBadRequest)
+		//http.Error(w, "Bad request", http.StatusBadRequest)
+		xerrors.RenderErrorPage(w, http.StatusBadRequest, xerrors.ErrBadRequest )
 		return
 	}
 
@@ -122,7 +130,9 @@ func HandleEditComment(w http.ResponseWriter, r *http.Request) {
 
 	newContent := strings.TrimSpace(r.FormValue("content"))
 	if newContent == "" {
-		http.Error(w, "Comment cannot be empty", http.StatusBadRequest)
+		//http.Error(w, "Comment cannot be empty", http.StatusBadRequest)
+		xerrors.RenderErrorPage(w, http.StatusBadRequest, xerrors.ErrBadRequest)
+
 		return
 	}
 
@@ -130,16 +140,20 @@ func HandleEditComment(w http.ResponseWriter, r *http.Request) {
 	var ownerID string
 	err := db.Globaldb.QueryRow("SELECT user_id FROM comments WHERE id = ?", commentID).Scan(&ownerID)
 	if err == sql.ErrNoRows {
-		http.Error(w, "Comment not found", http.StatusNotFound)
+		//http.Error(w, "Comment not found", http.StatusNotFound)
+		xerrors.RenderErrorPage(w, http.StatusNotFound,"Comment not found" )
+
 		return
 	} else if err != nil {
 		log.Printf("Error checking comment ownership: %v", err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		//http.Error(w, "Internal server error", http.StatusInternalServerError)
+		xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrInternalServer )
 		return
 	}
 
 	if ownerID != userID {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		//http.Error(w, "Forbidden", http.StatusForbidden)
+		xerrors.RenderErrorPage(w, http.StatusForbidden, xerrors.ErrForbidden)
 		return
 	}
 
@@ -147,7 +161,8 @@ func HandleEditComment(w http.ResponseWriter, r *http.Request) {
 	result, err := db.Globaldb.Exec("UPDATE comments SET content = ? WHERE id = ?", newContent, commentID)
 	if err != nil {
 		log.Printf("Error updating comment: %v", err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		//http.Error(w, "Internal server error", http.StatusInternalServerError)
+		xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrInternalServer )
 		return
 	}
 
@@ -168,12 +183,14 @@ func HandleEditComment(w http.ResponseWriter, r *http.Request) {
 func HandleDeleteComment(w http.ResponseWriter, r *http.Request) {
 	userID, _ := auth.GetUserIDFromSession(r)
 	if userID == "" {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		//http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		xerrors.RenderErrorPage(w, http.StatusUnauthorized, xerrors.ErrUnauthorized )
 		return
 	}
 
 	if err := r.ParseForm(); err != nil {
-		http.Error(w, "Bad request", http.StatusBadRequest)
+		//http.Error(w, "Bad request", http.StatusBadRequest)
+		xerrors.RenderErrorPage(w, http.StatusBadRequest, xerrors.ErrBadRequest )
 		return
 	}
 
@@ -190,7 +207,8 @@ func HandleDeleteComment(w http.ResponseWriter, r *http.Request) {
 	err := db.Globaldb.QueryRow("SELECT post_id FROM comments WHERE id = ?", commentID).Scan(&postID)
 	if err != nil && err != sql.ErrNoRows {
 		log.Printf("Error getting post ID: %v", err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		//http.Error(w, "Internal server error", http.StatusInternalServerError)
+		xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrInternalServer )
 		return
 	}
 
@@ -198,16 +216,20 @@ func HandleDeleteComment(w http.ResponseWriter, r *http.Request) {
 	var ownerID string
 	err = db.Globaldb.QueryRow("SELECT user_id FROM comments WHERE id = ?", commentID).Scan(&ownerID)
 	if err == sql.ErrNoRows {
-		http.Error(w, "Comment not found", http.StatusNotFound)
+		//http.Error(w, "Comment not found", http.StatusNotFound)
+		xerrors.RenderErrorPage(w, http.StatusNotFound, xerrors.ErrNotFound)
+
 		return
 	} else if err != nil {
 		log.Printf("Error checking comment ownership: %v", err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrInternalServer )
+		//http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
 	if ownerID != userID {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		//http.Error(w, "Forbidden", http.StatusForbidden)
+		xerrors.RenderErrorPage(w, http.StatusForbidden, xerrors.ErrForbidden )
 		return
 	}
 
@@ -215,7 +237,8 @@ func HandleDeleteComment(w http.ResponseWriter, r *http.Request) {
 	_, err = db.Globaldb.Exec("DELETE FROM comments WHERE id = ?", commentID)
 	if err != nil {
 		log.Printf("Error deleting comment: %v", err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		//http.Error(w, "Internal server error", http.StatusInternalServerError)
+		xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrInternalServer )
 		return
 	}
 
@@ -307,13 +330,15 @@ func HandleCommentReactions(w http.ResponseWriter, r *http.Request) {
 			if req.Like == 1{
 				_, err = db.Globaldb.Exec("UPDATE comments SET likes = likes - 1 WHERE id = ?", req.CommentID)
 				if err != nil {
-					http.Error(w, "Database error4.1", http.StatusInternalServerError)
+					//http.Error(w, "Database error4.1", http.StatusInternalServerError)
+					xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrInternalServer)
 					return
 				}
 			}else{
 				_, err = db.Globaldb.Exec("UPDATE comments SET dislikes = dislikes - 1 WHERE id = ?", req.CommentID)
 				if err != nil {
-					http.Error(w, "Database error4.2", http.StatusInternalServerError)
+					//http.Error(w, "Database error4.2", http.StatusInternalServerError)
+					xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrInternalServer )
 					return
 				}
 			}
@@ -331,7 +356,8 @@ func HandleCommentReactions(w http.ResponseWriter, r *http.Request) {
 			if req.Like == 1{
 				_, err = db.Globaldb.Exec("UPDATE comments SET likes = likes + 1 WHERE id = ?", req.CommentID)
 				if err != nil {
-					http.Error(w, "Database error4.1", http.StatusInternalServerError)
+					//http.Error(w, "Database error4.1", http.StatusInternalServerError)
+					xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrInternalServer )
 					return
 				}
 				_, err = db.Globaldb.Exec("UPDATE comments SET dislikes = dislikes - 1 WHERE id = ?", req.CommentID)
@@ -339,7 +365,8 @@ func HandleCommentReactions(w http.ResponseWriter, r *http.Request) {
 			}else{
 				_, err = db.Globaldb.Exec("UPDATE comments SET dislikes = dislikes + 1 WHERE id = ?", req.CommentID)
 				if err != nil {
-					http.Error(w, "Database error4.1", http.StatusInternalServerError)
+					//http.Error(w, "Database error4.1", http.StatusInternalServerError)
+					xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrInternalServer )
 					return
 				}
 				_, err = db.Globaldb.Exec("UPDATE comments SET likes = likes - 1 WHERE id = ?", req.CommentID)
