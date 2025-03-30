@@ -14,6 +14,8 @@ import (
 	"forum/internal/auth"
 	"forum/internal/db"
 	"forum/internal/posts"
+	"forum/internal/xerrors"
+
 )
 
 func CreatedPosts(w http.ResponseWriter, r *http.Request) {
@@ -256,7 +258,8 @@ func renderCreatedTemplateForPosts(w http.ResponseWriter, postss []posts.Post, u
 	templatePath := filepath.Join(basePath, "internal", "web", "templates", "created.html")
 	tmpl, err := template.ParseFiles(templatePath)
 	if err != nil {
-		http.Error(w, "Error loading template", http.StatusInternalServerError)
+		//http.Error(w, "Error loading template", http.StatusInternalServerError)
+		xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrInternalServer )
 		return err
 	}
 

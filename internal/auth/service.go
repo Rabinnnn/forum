@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"forum/internal/xerrors"
+
 )
 
 // GetUserByID retrieves a user from the database by their ID
@@ -72,12 +74,15 @@ func (h *AuthHandler) ProfileHandler(w http.ResponseWriter, r *http.Request) {
 	profileUser, err := GetUserByID(h.db, userID)
 	if err != nil {
 		log.Printf("Error getting user profile: %v", err)
-		http.Error(w, "User not found", http.StatusNotFound)
+		//http.Error(w, "User not found", http.StatusNotFound)
+		xerrors.RenderErrorPage(w, http.StatusNotFound, "User not found")
+
 		return
 	}
 	if profileUser == nil {
 		log.Printf("No user found with ID: %s", userID)
-		http.Error(w, "User not found", http.StatusNotFound)
+		//http.Error(w, "User not found", http.StatusNotFound)
+		xerrors.RenderErrorPage(w, http.StatusNotFound, "User not found")
 		return
 	}
 
@@ -111,7 +116,8 @@ func (h *AuthHandler) ProfileHandler(w http.ResponseWriter, r *http.Request) {
 	// Execute template
 	if err := h.templates.ExecuteTemplate(w, "profile.html", data); err != nil {
 		log.Printf("Error executing profile template: %v", err)
-		http.Error(w, "Error rendering profile", http.StatusInternalServerError)
+		//http.Error(w, "Error rendering profile", http.StatusInternalServerError)
+		xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrInternalServer )
 		return
 	}
 }

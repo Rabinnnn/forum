@@ -4,6 +4,8 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"forum/internal/xerrors"
+
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -97,5 +99,7 @@ func (h *AuthHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	//http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	xerrors.RenderErrorPage(w, http.StatusMethodNotAllowed, xerrors.ErrMethodNotAllowed)
+
 }
