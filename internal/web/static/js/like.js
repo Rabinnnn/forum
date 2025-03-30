@@ -356,6 +356,36 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 
+document.addEventListener('DOMContentLoaded', function() {
+    const hamburgerBtn = document.querySelector('.hamburger-btn');
+    const navRight = document.querySelector('.nav-right');
+    const overlay = document.querySelector('.mobile-menu-overlay');
+    const menuToggles = document.querySelectorAll('.menu-toggle-btn');
+
+    // Toggle mobile menu
+    hamburgerBtn.addEventListener('click', () => {
+        navRight.classList.toggle('active');
+        overlay.classList.toggle('active');
+        document.body.style.overflow = navRight.classList.contains('active') ? 'hidden' : '';
+    });
+
+    // Close menu when clicking overlay
+    overlay.addEventListener('click', () => {
+        navRight.classList.remove('active');
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+    });
+
+    // Toggle categories and filters sections
+    menuToggles.forEach(toggle => {
+        toggle.addEventListener('click', () => {
+            const content = toggle.nextElementSibling;
+            toggle.classList.toggle('active');
+            content.classList.toggle('active');
+        });
+    });
+});
+
 
 
 
