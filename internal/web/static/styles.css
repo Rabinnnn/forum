@@ -11,7 +11,6 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
    /* background-color: var(--light-gray); */
    /* background-image: url('images/bgs1.png'); */
-    /* background-image: url('static/images/plainGreenish.jpeg'); */
     background-attachment: fixed; 
     color: var(--text-color);
     line-height: 1.6;
@@ -330,6 +329,7 @@ body {
 }
 
 .post-content {
+    background-image: url('images/plainGreenish.jpeg');
     padding: 16px;
     font-size: 15px;
     line-height: 1.5;

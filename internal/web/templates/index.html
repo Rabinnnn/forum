@@ -77,12 +77,29 @@
             <div class="posts-container">
                 {{range .Posts}}
                     <div class="post">
-                        <h2>{{.Title}}</h2>
-                        <p>{{.Content}}</p>
-                        {{if .ImagePath}}
-                            <img src="{{.ImagePath}}" alt="Post image" class="post-image" onerror="this.onerror=null; this.src='/static/images/placeholder.png';">
-                        {{end}}
-                        
+                        <div class="post-header">
+                            <div class="post-avatar">
+                                {{if .ProfilePic.Valid}}
+                                    <img src="{{.ProfilePic.String}}" alt="Profile Picture" class="post-avatar-img">
+                                {{else}}
+                                    <div class="post-avatar-placeholder">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                {{end}}
+                            </div>
+                            <div class="post-info">
+    
+                                <h3>{{.Username}}</h3>
+                                <span class="timestamp">{{.PostTime}}</span>
+                            </div>
+                        </div> 
+                        <div class="post-content">
+                            <h2>{{.Title}}</h2>
+                            <p>{{.Content}}</p>
+                            {{if .ImagePath}}
+                                <img src="{{.ImagePath}}" alt="Post image" class="post-image" onerror="this.onerror=null; this.src='/static/images/placeholder.png';">
+                            {{end}}
+                        </div>
                         <div class="post-footer">
                             <div class="action-container">
                                 <button class="action-btn like-btn" onclick="event.stopPropagation();" data-post-id="{{.ID}}" data-action="like">
@@ -129,6 +146,7 @@
                                             <span class="comment-time">{{.GetCreatedAt.Format "Jan 02, 2006 15:04"}}</span>
                                         </div>
                                         <p class="comment-content" id="comment-content-{{.ID}}">{{.GetContent}}</p>
+                                     {{if $.IsLoggedIn}}
                                         {{if eq .UserID $.User.ID}}
                                         <!-- <div id="debug-user-id">Debug User ID: {{if $.User}}{{$.User.ID}}{{else}}NULL{{end}}</div> -->
 
@@ -144,6 +162,7 @@
                                             </form>
                                         </div>
                                         {{end}}
+                                    {{end}}
                                          <!-- Comment Reaction Buttons -->
                                         <div class="comment-reaction-buttons">
                                             <div class="action-container">
