@@ -2,17 +2,27 @@ package auth
 
 import (
 	"database/sql"
+	//"flag"
+	"forum/internal/xerrors"
 	"html/template"
 	"log"
 	"net/http"
 	"path/filepath"
-	"forum/internal/xerrors"
-
+	"testing"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
-var templates = template.Must(template.ParseGlob(filepath.Join("internal", "web", "templates", "*.html")))
+var templates *template.Template // Declare it first
+
+func init() {
+    if !testing.Testing() { // Skip loading templates if running tests
+        templates = template.Must(template.ParseGlob(filepath.Join("internal", "web", "templates", "*.html")))
+    }
+}
+// var templates = template.Must(template.ParseGlob(filepath.Join("internal", "web", "templates", "*.html")))
+//var templates = template.Must(template.ParseGlob("./internal/web/templates/*.html"))
+
 
 func (h *AuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("LoginHandler called with method: %s, URL: %s", r.Method, r.URL.Path)

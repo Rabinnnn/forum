@@ -7,14 +7,14 @@ import (
     "time"
 )
 
-type csrfToken struct {
-    token   string
-    expires time.Time
+type CsrfToken struct {
+    Token   string
+    Expires time.Time
 }
 
 var (
-    tokens = make(map[string]csrfToken)
-    mutex  sync.RWMutex
+    Tokens = make(map[string]CsrfToken)
+    Mutex  sync.RWMutex
 )
 
 func Generate() string {
@@ -24,24 +24,24 @@ func Generate() string {
     token := base64.URLEncoding.EncodeToString(b)
 
     // Store token with expiration
-    mutex.Lock()
-    tokens[token] = csrfToken{
-        token:   token,
-        expires: time.Now().Add(1 * time.Hour),
+    Mutex.Lock()
+    Tokens[token] = CsrfToken{
+        Token:   token,
+        Expires: time.Now().Add(1 * time.Hour),
     }
-    mutex.Unlock()
+    Mutex.Unlock()
 
     return token
 }
 
 func Verify(token string) bool {
-    mutex.RLock()
-    defer mutex.RUnlock()
+    Mutex.RLock()
+    defer Mutex.RUnlock()
 
-    if storedToken, exists := tokens[token]; exists {
-        if time.Now().Before(storedToken.expires) {
+    if storedToken, exists := Tokens[token]; exists {
+        if time.Now().Before(storedToken.Expires) {
             // Clean up used token
-            delete(tokens, token)
+            delete(Tokens, token)
             return true
         }
     }
@@ -53,13 +53,13 @@ func init() {
     go func() {
         for {
             time.Sleep(1 * time.Hour)
-            mutex.Lock()
-            for token, t := range tokens {
-                if time.Now().After(t.expires) {
-                    delete(tokens, token)
+            Mutex.Lock()
+            for token, t := range Tokens {
+                if time.Now().After(t.Expires) {
+                    delete(Tokens, token)
                 }
             }
-            mutex.Unlock()
+            Mutex.Unlock()
         }
     }()
 }

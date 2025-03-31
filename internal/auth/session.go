@@ -6,11 +6,11 @@ import (
 	"github.com/google/uuid"
 )
 
-var sessions = make(map[string]string) // sessionID -> userID
+var Sessions = make(map[string]string) // sessionID -> userID
 
 func CreateSession(w http.ResponseWriter, userID string) {
 	sessionID := uuid.New().String()
-	sessions[sessionID] = userID
+	Sessions[sessionID] = userID
 
 	log.Printf("Creating session: ID=%s for user=%s", sessionID, userID)
 
@@ -30,7 +30,7 @@ func GetUserIDFromSession(r *http.Request) (string, bool) {
 		return "", false
 	}
 
-	userID, exists := sessions[cookie.Value]
+	userID, exists := Sessions[cookie.Value]
 	log.Printf("Session lookup: cookie=%s, userID=%s, exists=%v",
 		cookie.Value, userID, exists)
 
@@ -40,7 +40,7 @@ func GetUserIDFromSession(r *http.Request) (string, bool) {
 func ClearSession(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session_id")
 	if err == nil {
-		delete(sessions, cookie.Value)
+		delete(Sessions, cookie.Value)
 	}
 
 	http.SetCookie(w, &http.Cookie{
