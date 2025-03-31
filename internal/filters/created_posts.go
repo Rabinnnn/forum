@@ -8,8 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"time"
 	"strings"
+	"time"
 
 	"forum/internal/auth"
 	"forum/internal/db"
@@ -26,38 +26,35 @@ func CreatedPosts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch posts
-	posts, err := fetchUserPostsForPosts(userID)
+	userPosts, err := fetchUserPostsForPosts(userID)
 	if err != nil {
 		log.Printf("Error fetching posts: %v", err)
 		http.Error(w, "Error fetching posts", http.StatusInternalServerError)
 		return
 	}
 
-	if err := renderCreatedTemplateForPosts(w, posts, userID); err != nil {
+	if err := renderCreatedTemplateForPosts(w, userPosts, userID); err != nil {
 		log.Printf("Error rendering template: %v", err)
 		return
 	}
 }
 
-func LikedPosts(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-
-	// Check session
+func HandleLikedPosts(w http.ResponseWriter, r *http.Request) {
 	userID, err := validateUserSession(w, r)
 	if err != nil {
+		http.Redirect(w, r, "/signin", http.StatusSeeOther)
 		return
 	}
 
-	// Fetch posts
 	posts, err := fetchUserPostsForLikes(userID)
 	if err != nil {
-		log.Printf("Error fetching posts: %v", err)
+		log.Printf("Error fetching liked posts: %v", err)
 		http.Error(w, "Error fetching posts", http.StatusInternalServerError)
 		return
 	}
 
-	if err := renderCreatedTemplateForLikes(w, posts, userID); err != nil {
-		log.Printf("Error rendering template: %v", err)
+	if err := renderLikedTemplate(w, posts, userID); err != nil {
+		log.Printf("Error rendering liked posts template: %v", err)
 		return
 	}
 }
@@ -116,7 +113,6 @@ func fetchUserPostsForPosts(userID string) ([]posts.Post, error) {
 		var postTime time.Time
 		var totalCount int
 
-
 		err := rows.Scan(
 			&post.ID,
 			&post.UserID,
@@ -172,13 +168,13 @@ func fetchUserPostsForPosts(userID string) ([]posts.Post, error) {
 
 		// Handle NULL comments
 		if commentID.Valid && commentUserID.Valid && commentContent.Valid && commentCreatedAt.Valid {
-			comment := posts.Comment{ 
-				ID:         commentID.String,
-				UserID:     commentUserID.String,
-				Content:    commentContent.String,
-				CreatedAt:  commentCreatedAt.Time,
-			//	Username:   commentUsername.String,
-			//	ProfilePic: commentProfilePic,
+			comment := posts.Comment{
+				ID:        commentID.String,
+				UserID:    commentUserID.String,
+				Content:   commentContent.String,
+				CreatedAt: commentCreatedAt.Time,
+				//	Username:   commentUsername.String,
+				//	ProfilePic: commentProfilePic,
 			}
 			post.Comments = append(post.Comments, comment)
 		}
@@ -195,30 +191,46 @@ func fetchUserPostsForPosts(userID string) ([]posts.Post, error) {
 	return postsList, nil
 }
 
-
 func fetchUserPostsForLikes(userID string) ([]posts.Post, error) {
 	rows, err := db.Globaldb.Query(`
-        SELECT p.id, p.user_id, p.title, p.content, p.imagepath, p.post_at, p.likes, p.dislikes, p.comments,
-               u.username, u.profile_pic, c.id AS category_id, c.name AS category_name
+        SELECT 
+            p.id, 
+            p.user_id, 
+            p.title, 
+            p.content, 
+            p.image_path, 
+            p.created_at,
+            COALESCE((SELECT COUNT(*) FROM likes WHERE post_id = p.id AND like = 1), 0) as likes,
+            COALESCE((SELECT COUNT(*) FROM likes WHERE post_id = p.id AND like = 0), 0) as dislikes,
+            u.username, 
+            u.profile_pic,
+            GROUP_CONCAT(DISTINCT c.id) AS category_ids, 
+            GROUP_CONCAT(DISTINCT c.name) AS category_names,
+            (SELECT COUNT(*) FROM comments WHERE post_id = p.id) AS comment_count,
+            EXISTS(SELECT 1 FROM likes WHERE post_id = p.id AND user_id = ? AND like = 1) as user_liked,
+            EXISTS(SELECT 1 FROM likes WHERE post_id = p.id AND user_id = ? AND like = 0) as user_disliked
         FROM posts p
         JOIN users u ON p.user_id = u.id
         LEFT JOIN post_categories pc ON p.id = pc.post_id
         LEFT JOIN categories c ON pc.category_id = c.id
-        JOIN reaction r ON p.id = r.post_id
-        WHERE r.user_id = ? AND r.like = 1
-        ORDER BY p.post_at DESC
-    `, userID)
+        JOIN likes l ON p.id = l.post_id
+        WHERE l.user_id = ? AND l.like = 1
+        GROUP BY p.id
+        ORDER BY p.created_at DESC
+    `, userID, userID, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	postMap := make(map[int]posts.Post)
-	var postTime time.Time
+	var userPosts []posts.Post
 	for rows.Next() {
 		var post posts.Post
-		var categoryID sql.NullInt64
-		var categoryName sql.NullString
+		var categoryIDs, categoryNames sql.NullString
+		var profilePic sql.NullString
+		var postTime time.Time
+		var userLiked, userDisliked bool
+
 		err := rows.Scan(
 			&post.ID,
 			&post.UserID,
@@ -228,30 +240,44 @@ func fetchUserPostsForLikes(userID string) ([]posts.Post, error) {
 			&postTime,
 			&post.Likes,
 			&post.Dislikes,
-			&post.Comments,
 			&post.Username,
-			&post.ProfilePic,
-			&categoryID,
-			&categoryName,
+			&profilePic,
+			&categoryIDs,
+			&categoryNames,
+			&post.CommentCount,
+			&userLiked,
+			&userDisliked,
 		)
 		if err != nil {
 			return nil, err
 		}
+
 		post.PostTime = FormatTimeAgo(postTime.Local())
-		idNum, _ := strconv.Atoi(post.ID)
-		postMap[idNum] = post
+		post.ProfilePic = profilePic
+		post.UserLiked = userLiked
+		post.UserDisliked = userDisliked
 
+		if categoryIDs.Valid && categoryNames.Valid {
+			idList := strings.Split(categoryIDs.String, ",")
+			nameList := strings.Split(categoryNames.String, ",")
+			for i := range idList {
+				id, err := strconv.Atoi(strings.TrimSpace(idList[i]))
+				if err == nil && i < len(nameList) {
+					post.Categories = append(post.Categories, posts.Category{
+						ID:   id,
+						Name: strings.TrimSpace(nameList[i]),
+					})
+				}
+			}
+		}
+
+		userPosts = append(userPosts, post)
 	}
 
-	var posts []posts.Post
-	for _, post := range postMap {
-		posts = append(posts, post)
-	}
-
-	return posts, nil
+	return userPosts, nil
 }
 
-func renderCreatedTemplateForPosts(w http.ResponseWriter, postss []posts.Post, userID string) error {
+func renderCreatedTemplateForPosts(w http.ResponseWriter, userPosts []posts.Post, userID string) error {
 	basePath, _ := os.Getwd() // Gets the root directory where the app runs
 	templatePath := filepath.Join(basePath, "internal", "web", "templates", "created.html")
 	tmpl, err := template.ParseFiles(templatePath)
@@ -264,15 +290,17 @@ func renderCreatedTemplateForPosts(w http.ResponseWriter, postss []posts.Post, u
 		Posts  []posts.Post
 		UserID string
 	}{
-		Posts:  postss,
+		Posts:  userPosts,
 		UserID: userID,
 	}
 
 	return tmpl.Execute(w, data)
 }
 
-func renderCreatedTemplateForLikes(w http.ResponseWriter, postss []posts.Post, userID string) error {
-	tmpl, err := template.ParseFiles("templates/liked.html")
+func renderLikedTemplate(w http.ResponseWriter, userPosts []posts.Post, userID string) error {
+	basePath, _ := os.Getwd()
+	templatePath := filepath.Join(basePath, "internal", "web", "templates", "liked.html")
+	tmpl, err := template.ParseFiles(templatePath)
 	if err != nil {
 		http.Error(w, "Error loading template", http.StatusInternalServerError)
 		return err
@@ -282,7 +310,7 @@ func renderCreatedTemplateForLikes(w http.ResponseWriter, postss []posts.Post, u
 		Posts  []posts.Post
 		UserID string
 	}{
-		Posts:  postss,
+		Posts:  userPosts,
 		UserID: userID,
 	}
 
