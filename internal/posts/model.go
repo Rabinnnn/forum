@@ -22,21 +22,23 @@ type CommentData interface {
 }
 
 type Post struct {
-	ID         string         `json:"id"`
-	UserID     string         `json:"user_id"`
-	Title      string         `json:"title"`
-	Content    string         `json:"content"`
-	Categories []Category     `json:"categories"`
-	ImagePath  string         `json:"image_path"`
-	CreatedAt  time.Time      `json:"created_at"`
-	Username   string         `json:"username"`
-	ProfilePic sql.NullString `json:"profile_pic"`
-	Likes      int            `json:"likes"`
-	Dislikes   int            `json:"dislikes"`
-	Comments   []CommentData  `json:"comments"`
-	CommentCount int		  `json:"comment_count"`
-	PostTime   string         `json:"post_time,omitempty"`
-	IsLoggedIn bool
+	ID            string         `json:"id"`
+	UserID        string         `json:"user_id"`
+	Title         string         `json:"title"`
+	Content       string         `json:"content"`
+	Categories    []Category     `json:"categories"`
+	ImagePath     string         `json:"image_path"`
+	CreatedAt     time.Time      `json:"created_at"`
+	Username      string         `json:"username"`
+	ProfilePic    sql.NullString `json:"profile_pic"`
+	Likes         int            `json:"likes"`
+	Dislikes      int            `json:"dislikes"`
+	Comments      []CommentData  `json:"comments"`
+	CommentCount  int            `json:"comment_count"`
+	PostTime      string         `json:"post_time,omitempty"`
+	IsLoggedIn    bool
+	UserLiked     bool           `json:"user_liked"`
+	UserDisliked  bool           `json:"user_disliked"`
 }
 
 type PostServiceInterface interface {
