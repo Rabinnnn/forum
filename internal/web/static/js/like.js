@@ -241,6 +241,10 @@ async function submitComment(event, postId, currentUser) {
 
         // Force refresh comments immediately
         await loadComments(postId, currentUser);
+        // Attach event listeners for comment reaction buttons
+        document.querySelectorAll(".comment-like-btn, .comment-dislike-btn").forEach(button => {
+            button.addEventListener("click", commentReaction);
+        });
 
         // Update comment count
         const commentCountElement = document.getElementById(`comments-${postId}`);
@@ -254,6 +258,7 @@ async function submitComment(event, postId, currentUser) {
         alert('Failed to post comment. Please try again.');
     }
 }
+
 
 // Function to load comments
 async function loadComments(postId, currentUser) {
