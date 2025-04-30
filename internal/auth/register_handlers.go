@@ -3,7 +3,6 @@ package auth
 import (
 	"log"
 	"net/http"
-	"net/mail"
 	"strings"
 
 	"github.com/google/uuid"
@@ -47,7 +46,7 @@ func (h *AuthHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		if username == "" {
 			errors.UsernameError = "Username is required."
 		}
-		if email == "" || isEmailValid(email) {
+		if email == "" {
 			errors.EmailError = "Email is not valid"
 		}
 		if password == "" {
@@ -101,7 +100,8 @@ func (h *AuthHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 }
 
-func isEmailValid(email string) bool {
-	_, err := mail.ParseAddress(email)
-	return err == nil
-}
+// to be implemented
+// func isEmailValid(email string) bool {
+// 	_, err := mail.ParseAddress(email)
+// 	return err == nil
+// }
