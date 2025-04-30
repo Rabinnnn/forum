@@ -48,7 +48,8 @@ func (s *PostService) CreatePost(post *Post) error {
 		return fmt.Errorf("failed to insert post: %v", err)
 	}
 
-	// Insert categories
+	//Insert categories
+	fmt.Println("Post categories:",post.Categories)
 	for _, category := range post.Categories {
 		_, err = tx.Exec(`
 			INSERT INTO post_categories (post_id, category_id)
@@ -58,6 +59,28 @@ func (s *PostService) CreatePost(post *Post) error {
 			return fmt.Errorf("failed to insert category %d: %v", category.ID, err)
 		}
 	}
+
+
+	// Ensure all unique category IDs are inserted for a post
+	// unique := make(map[int]bool)
+
+	// for _, category := range post.Categories {
+	// 	// Skip duplicates in the input slice
+	// 	if unique[category.ID] {
+	// 		continue
+	// 	}
+	// 	unique[category.ID] = true
+
+	// 	// Insert, ignoring if the (post_id, category_id) pair already exists in DB
+	// 	_, err = tx.Exec(`
+	// 		INSERT INTO post_categories (post_id, category_id)
+	// 		VALUES (?, ?)
+	// 	`, post.ID, category.ID)
+	// 	if err != nil {
+	// 		return fmt.Errorf("failed to insert category %d: %v", category.ID, err)
+	// 	}
+	// }
+
 
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("failed to commit transaction: %v", err)

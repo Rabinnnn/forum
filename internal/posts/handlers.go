@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"forum/internal/auth"
@@ -76,9 +77,20 @@ func (h *PostHandler) CreatePostHandler(w http.ResponseWriter, r *http.Request) 
 
 		// Handle categories
 		if categories := r.Form["categories[]"]; len(categories) > 0 {
+			// for _, catID := range categories {
+			// 	post.Categories = append(post.Categories, Category{ID: parseInt(catID)})
+			// }
 			for _, catID := range categories {
-				post.Categories = append(post.Categories, Category{ID: parseInt(catID)})
+				id, err := strconv.Atoi(catID)
+				if err != nil {
+					log.Printf("invalid category ID: %v", catID)
+					continue // skip invalid IDs
+				}
+				post.Categories = append(post.Categories, Category{ID: id})
 			}
+			fmt.Printf("Parsed categories for post: %+v\n", post.Categories)
+
+			
 		}
 
 		// Handle image upload if present
