@@ -10,7 +10,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var templates = template.Must(template.ParseGlob(filepath.Join("internal", "web", "templates", "*.html")))
+var templates = template.Must(template.ParseGlob(filepath.Join("..", "..", "web", "templates", "*.html")))
 
 func (h *AuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("LoginHandler called with method: %s, URL: %s", r.Method, r.URL.Path)
