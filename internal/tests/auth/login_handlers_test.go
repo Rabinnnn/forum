@@ -3,174 +3,145 @@ package auth
 import (
 	"bytes"
 	"database/sql"
+	"html/template"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
-
+	"github.com/DATA-DOG/go-sqlmock"
 	"golang.org/x/crypto/bcrypt"
 )
 
-type mockDBLogin struct {
-	queryRowFunc func(query string, args ...interface{}) *sql.Row
-}
+func TestLoginHandler_Get(t *testing.T) {
+	db, _, _ := sqlmock.New()
+	defer db.Close()
 
-func (m *mockDBLogin) QueryRow(query string, args ...interface{}) *sql.Row {
-	return m.queryRowFunc(query, args...)
-}
-
-type DBInterface interface {
-	QueryRow(query string, args ...interface{}) *sql.Row
-}
-
-type TestAuthHandler struct {
-	db        DBInterface
-	templates TemplateInterface
-}
-
-// LoginHandler handles login requests
-func (h *TestAuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == http.MethodGet {
-		h.templates.ExecuteTemplate(w, "login.html", nil)
-		return
+	h := &AuthHandler{
+		db: db,
+		templates: template.Must(template.New("login.html").Parse(`
+			<html><body>Login Page</body></html>
+		`)),
 	}
 
-	if r.Method == http.MethodPost {
-		if err := r.ParseForm(); err != nil {
-			http.Error(w, "Invalid form data", http.StatusBadRequest)
-			return
-		}
+	req := httptest.NewRequest(http.MethodGet, "/login", nil)
+	w := httptest.NewRecorder()
 
-		username := r.FormValue("username")
-		password := r.FormValue("password")
+	h.LoginHandler(w, req)
 
-		row := h.db.QueryRow("SELECT id, username, email, password FROM users WHERE username = ?", username)
-		var id int
-		var dbUsername, email, hashedPassword string
-		if err := row.Scan(&id, &dbUsername, &email, &hashedPassword); err != nil {
-			h.templates.ExecuteTemplate(w, "login.html", "Invalid credentials")
-			return
-		}
-
-		if err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password)); err != nil {
-			h.templates.ExecuteTemplate(w, "login.html", "Invalid credentials")
-			return
-		}
-
-		http.Redirect(w, r, "/dashboard", http.StatusSeeOther)
-		return
-	}
-
-	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-}
-
-
-type TemplateInterface interface {
-	ExecuteTemplate(wr http.ResponseWriter, name string, data interface{}) error
-}
-
-type mockTemplate struct {
-	executeTemplateFunc func(wr http.ResponseWriter, name string, data interface{}) error
-}
-
-func (m *mockTemplate) ExecuteTemplate(wr http.ResponseWriter, name string, data interface{}) error {
-	return m.executeTemplateFunc(wr, name, data)
-}
-
-func TestLoginHandler(t *testing.T) {
-	tests := []struct {
-		name           string
-		method         string
-		formData       string
-		dbQueryRowFunc func(query string, args ...interface{}) *sql.Row
-		templateFunc   func(wr http.ResponseWriter, name string, data interface{}) error
-		expectedCode   int
-		expectedBody   string
-	}{
-		{
-			name:   "GET request renders login page",
-			method: http.MethodGet,
-			templateFunc: func(wr http.ResponseWriter, name string, data interface{}) error {
-				if name != "login.html" {
-					t.Errorf("expected template name 'login.html', got '%s'", name)
-				}
-				return nil
-			},
-			expectedCode: http.StatusOK,
-		},
-		{
-			name:     "POST request with invalid credentials",
-			method:   http.MethodPost,
-			formData: "username=testuser&password=wrongpassword",
-			dbQueryRowFunc: func(query string, args ...interface{}) *sql.Row {
-				return &sql.Row{}
-			},
-			templateFunc: func(wr http.ResponseWriter, name string, data interface{}) error {
-				if name != "login.html" {
-					t.Errorf("expected template name 'login.html', got '%s'", name)
-				}
-				return nil
-			},
-			expectedCode: http.StatusOK,
-		},
-		{
-			name:     "POST request with valid credentials",
-			method:   http.MethodPost,
-			formData: "username=testuser&password=correctpassword",
-			dbQueryRowFunc: func(query string, args ...interface{}) *sql.Row {
-				hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("correctpassword"), bcrypt.DefaultCost)
-				return createMockRow([]interface{}{1, "testuser", "test@example.com", string(hashedPassword)})
-			},
-			templateFunc: func(wr http.ResponseWriter, name string, data interface{}) error {
-				return nil
-			},
-			expectedCode: http.StatusSeeOther,
-		},
-		{
-			name:         "Unsupported HTTP method",
-			method:       http.MethodPut,
-			expectedCode: http.StatusMethodNotAllowed,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			db := &mockDBLogin{queryRowFunc: tt.dbQueryRowFunc}
-			templates := &mockTemplate{executeTemplateFunc: tt.templateFunc}
-			handler := &TestAuthHandler{db: db, templates: templates}
-
-			var body *bytes.Buffer
-			if tt.formData != "" {
-				body = bytes.NewBufferString(tt.formData)
-			} else {
-				body = &bytes.Buffer{}
-			}
-
-			req := httptest.NewRequest(tt.method, "/login", body)
-			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-			w := httptest.NewRecorder()
-
-			handler.LoginHandler(w, req)
-
-			resp := w.Result()
-			defer resp.Body.Close()
-
-			if resp.StatusCode != tt.expectedCode {
-				t.Errorf("expected status code %d, got %d", tt.expectedCode, resp.StatusCode)
-			}
-
-			if tt.expectedBody != "" {
-				body := w.Body.String()
-				if !strings.Contains(body, tt.expectedBody) {
-					t.Errorf("expected response body to contain '%s', got '%s'", tt.expectedBody, body)
-				}
-			}
-		})
+	resp := w.Result()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected status 200, got %d", resp.StatusCode)
 	}
 }
 
-func createMockRow(values []interface{}) *sql.Row {
-	row := sql.Row{}
-	row.Scan(values...)
-	return &row
+func TestLoginHandler_Post_Success(t *testing.T) {
+	db, mock, _ := sqlmock.New()
+	defer db.Close()
+
+	password := "secret"
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+
+	mock.ExpectQuery("SELECT id, username, email, password FROM users").
+		WithArgs("user", "user").
+		WillReturnRows(sqlmock.NewRows([]string{"id", "username", "email", "password"}).
+			AddRow("123", "user", "user@example.com", string(hashedPassword)))
+
+	h := &AuthHandler{
+		db: db,
+		templates: template.Must(template.New("login.html").Parse(`
+			<html><body>Login Page</body></html>
+		`)),
+	}
+
+	form := "username=user&password=secret"
+	req := httptest.NewRequest(http.MethodPost, "/login", bytes.NewBufferString(form))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+
+	h.LoginHandler(w, req)
+
+	resp := w.Result()
+	if resp.StatusCode != http.StatusSeeOther {
+		t.Errorf("expected status 303 SeeOther, got %d", resp.StatusCode)
+	}
+}
+
+func TestLoginHandler_Post_InvalidPassword(t *testing.T) {
+	db, mock, _ := sqlmock.New()
+	defer db.Close()
+
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("correct"), bcrypt.DefaultCost)
+
+	mock.ExpectQuery("SELECT id, username, email, password FROM users").
+		WithArgs("user", "user").
+		WillReturnRows(sqlmock.NewRows([]string{"id", "username", "email", "password"}).
+			AddRow("123", "user", "user@example.com", string(hashedPassword)))
+
+	h := &AuthHandler{
+		db: db,
+		templates: template.Must(template.New("login.html").Parse(`
+			{{if .Error}}<p>{{.Error}}</p>{{end}}
+		`)),
+	}
+
+	form := "username=user&password=wrong"
+	req := httptest.NewRequest(http.MethodPost, "/login", bytes.NewBufferString(form))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+
+	h.LoginHandler(w, req)
+
+	resp := w.Result()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected status 200 with error message, got %d", resp.StatusCode)
+	}
+}
+
+func TestLoginHandler_Post_UserNotFound(t *testing.T) {
+	db, mock, _ := sqlmock.New()
+	defer db.Close()
+
+	mock.ExpectQuery("SELECT id, username, email, password FROM users").
+		WithArgs("ghost", "ghost").
+		WillReturnError(sql.ErrNoRows)
+
+	h := &AuthHandler{
+		db: db,
+		templates: template.Must(template.New("login.html").Parse(`
+			{{if .Error}}<p>{{.Error}}</p>{{end}}
+		`)),
+	}
+
+	form := "username=ghost&password=anything"
+	req := httptest.NewRequest(http.MethodPost, "/login", bytes.NewBufferString(form))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+
+	h.LoginHandler(w, req)
+
+	resp := w.Result()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected status 200 with error message, got %d", resp.StatusCode)
+	}
+}
+
+func TestLoginHandler_InvalidMethod(t *testing.T) {
+	db, _, _ := sqlmock.New()
+	defer db.Close()
+
+	h := &AuthHandler{
+		db: db,
+		templates: template.Must(template.New("login.html").Parse(`
+			<html><body>Login Page</body></html>
+		`)),
+	}
+
+	req := httptest.NewRequest(http.MethodPut, "/login", nil)
+	w := httptest.NewRecorder()
+
+	h.LoginHandler(w, req)
+
+	resp := w.Result()
+	if resp.StatusCode != http.StatusMethodNotAllowed {
+		t.Errorf("expected status 405, got %d", resp.StatusCode)
+	}
 }
