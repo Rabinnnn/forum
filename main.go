@@ -126,6 +126,10 @@ func main() {
 
 	http.HandleFunc("/react", likes.HandleReactions)
 	http.HandleFunc("/created", filters.CreatedPosts)
+	categoryHandler := filters.NewCategoryHandler()
+	http.Handle("/categories", categoryHandler)
+	http.Handle("/category", categoryHandler)
+
 
 
 

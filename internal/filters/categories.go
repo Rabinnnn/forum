@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+	"os"
+	"path/filepath"
 
 	//"forum/xerrors"
 	"forum/internal/db"
@@ -151,11 +153,18 @@ func (ch *CategoryHandler) handleGetPostsByCategoryName(w http.ResponseWriter, r
 		CurrentUserID: currentUserID,
 	}
 
-	tmpl, err := template.ParseFiles("templates/category_posts.html")
+	// tmpl, err := template.ParseFiles("templates/category_posts.html")
+	// if err != nil {
+	// 	log.Printf("Error parsing category posts template: %v", err)
+	// 	xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrTemplateExec)
+	// 	return
+	// }
+	basePath, _ := os.Getwd() // Gets the root directory where the app runs
+	templatePath := filepath.Join(basePath, "internal", "web", "templates", "category_posts.html")
+	tmpl, err := template.ParseFiles(templatePath)
 	if err != nil {
-		log.Printf("Error parsing category posts template: %v", err)
+		log.Printf("Error loading template: %v", err)
 		xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrTemplateExec)
-		return
 	}
 
 	if err := tmpl.Execute(w, data); err != nil {
@@ -166,10 +175,10 @@ func (ch *CategoryHandler) handleGetPostsByCategoryName(w http.ResponseWriter, r
 
 func (ch *CategoryHandler) getPostsByCategoryName(categoryName string) ([]posts.Post, error) {
 	rows, err := db.Globaldb.Query(`
-        SELECT p.id, p.title, p.content, p.imagepath, p.post_at, u.username, u.profile_pic,
-               (SELECT COUNT(*) FROM reaction WHERE post_id = p.id AND like = 1) AS Likes,
-               (SELECT COUNT(*) FROM reaction WHERE post_id = p.id AND like = 0) AS Dislikes,
-               (SELECT COUNT(*) FROM comments WHERE post_id = p.id) AS Comments
+        SELECT p.id, p.title, p.content, p.image_path, p.created_at, u.username, u.profile_pic,
+               (SELECT COUNT(*) FROM likes WHERE post_id = p.id AND like = 1) AS Likes,
+               (SELECT COUNT(*) FROM likes WHERE post_id = p.id AND like = 0) AS Dislikes,
+    		   (SELECT COUNT(*) FROM comments WHERE post_id = p.id) AS total_comments  -- Correct count of all comments per post
         FROM posts p
         JOIN post_categories pc ON p.id = pc.post_id
         JOIN users u ON p.user_id = u.id
@@ -177,6 +186,8 @@ func (ch *CategoryHandler) getPostsByCategoryName(categoryName string) ([]posts.
         WHERE c.name = ?
     `, categoryName)
 	if err != nil {
+		            //  (SELECT COUNT(*) FROM comments WHERE post_id = p.id) AS Comments
+
 		return nil, err
 	}
 	defer rows.Close()
@@ -185,12 +196,15 @@ func (ch *CategoryHandler) getPostsByCategoryName(categoryName string) ([]posts.
 	for rows.Next() {
 		var post posts.Post
 		var postTime time.Time
-		if err := rows.Scan(&post.ID, &post.Title, &post.Content, &post.ImagePath, &postTime, &post.Username, &post.ProfilePic, &post.Likes, &post.Dislikes, &post.Comments); err != nil {
+		var totalCount int
+
+		if err := rows.Scan(&post.ID, &post.Title, &post.Content, &post.ImagePath, &postTime, &post.Username, &post.ProfilePic, &post.Likes, &post.Dislikes, &totalCount); err != nil {
 			log.Printf("Error scanning post: %v", err)
 			continue
 		}
 		post.PostTime = FormatTimeAgo(postTime.Local())
-		
+		post.CommentCount = totalCount
+
 		idNum, _ := strconv.Atoi(post.ID)
 		postMap[idNum] = post
 	}

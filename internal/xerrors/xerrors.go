@@ -3,6 +3,7 @@ package xerrors
 import (
 	"html/template"
 	"net/http"
+	"path/filepath"
 )
 
 type ErrorPageData struct {
@@ -27,6 +28,7 @@ const (
 	ErrFileTooLarge     = "File size exceeds the 10MB limit. Please upload a smaller image."
 	ErrInvalidFileType  = "Invalid file type. Only JPEG, PNG, and GIF images are allowed."
 	ErrNotFound         = "Not Found."
+	ErrBadRequest		= "Bad Request."
 )
 
 func RenderErrorPage(w http.ResponseWriter, code int, message string) {
@@ -36,7 +38,9 @@ func RenderErrorPage(w http.ResponseWriter, code int, message string) {
 	// Set status code after headers but before body
 	w.WriteHeader(code)
 
-	tmpl, err := template.ParseFiles("templates/error.html")
+	templatePath := filepath.Join("internal", "web", "templates", "errorPage.html")
+
+	tmpl, err := template.ParseFiles(templatePath)
 	if err != nil {
 		// Since we already wrote the header, we can't use http.Error here
 		w.Write([]byte("Error loading error page template"))
