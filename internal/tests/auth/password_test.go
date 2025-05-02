@@ -4,39 +4,38 @@ import (
 	"testing"
 )
 
-func TestHashPassword(t *testing.T) {
-	tests := []struct {
-		name     string
-		password string
-	}{
-		{
-			name:     "Valid Password",
-			password: "securepassword123",
-		},
-		{
-			name:     "Empty Password",
-			password: "",
-		},
-		{
-			name:     "Special Characters",
-			password: "!@#$%^&*()_+",
-		},
+func TestHashAndCheckPassword(t *testing.T) {
+	password := "mySecurePassword123"
+
+	hashedPassword, err := HashPassword(password)
+	if err != nil {
+		t.Fatalf("HashPassword returned an error: %v", err)
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			hash, err := HashPassword(tt.password)
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
-			if hash == "" {
-				t.Errorf("expected non-empty hash, got empty string")
-			}
+	if hashedPassword == "" {
+		t.Fatal("HashPassword returned an empty string")
+	}
 
-			// Verify the hash matches the original password
-			if !CheckPassword(tt.password, hash) {
-				t.Errorf("password does not match hash")
-			}
-		})
+	if !CheckPassword(password, hashedPassword) {
+		t.Error("CheckPassword failed: correct password was not recognized")
+	}
+
+	wrongPassword := "wrongPassword"
+	if CheckPassword(wrongPassword, hashedPassword) {
+		t.Error("CheckPassword incorrectly returned true for wrong password")
+	}
+}
+
+func TestHashPasswordUniqueness(t *testing.T) {
+	password := "repeatPassword"
+	hash1, err1 := HashPassword(password)
+	hash2, err2 := HashPassword(password)
+
+	if err1 != nil || err2 != nil {
+		t.Fatalf("Error hashing password: %v, %v", err1, err2)
+	}
+
+	if hash1 == hash2 {
+		t.Error("Expected different hashes for same password due to salt, but got identical hashes")
 	}
 }
