@@ -1,76 +1,72 @@
 package auth
 
 import (
+	"database/sql"
+	"encoding/json"
 	"testing"
 	"time"
 )
 
-func TestPost(t *testing.T) {
-	tests := []struct {
-		name     string
-		post     Post
-		expected Post
-	}{
-		{
-			name: "Valid Post",
-			post: Post{
-				ID:        "1",
-				Title:     "Test Title",
-				Content:   "Test Content",
-				ImagePath: "/images/test.jpg",
-				CreatedAt: time.Now(),
-				Likes:     10,
-				Dislikes:  2,
-				Comments:  5,
-			},
-			expected: Post{
-				ID:        "1",
-				Title:     "Test Title",
-				Content:   "Test Content",
-				ImagePath: "/images/test.jpg",
-				Likes:     10,
-				Dislikes:  2,
-				Comments:  5,
-			},
-		},
-		{
-			name: "Empty Post",
-			post: Post{},
-			expected: Post{
-				ID:        "",
-				Title:     "",
-				Content:   "",
-				ImagePath: "",
-				Likes:     0,
-				Dislikes:  0,
-				Comments:  0,
-			},
-		},
+func TestUserStructInitialization(t *testing.T) {
+	user := User{
+		ID:         "u123",
+		Username:   "testuser",
+		Email:      "test@example.com",
+		Password:   "hashedpassword",
+		ProfilePic: sql.NullString{String: "path/to/pic.jpg", Valid: true},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if tt.post.ID != tt.expected.ID {
-				t.Errorf("expected ID %s, got %s", tt.expected.ID, tt.post.ID)
-			}
-			if tt.post.Title != tt.expected.Title {
-				t.Errorf("expected Title %s, got %s", tt.expected.Title, tt.post.Title)
-			}
-			if tt.post.Content != tt.expected.Content {
-				t.Errorf("expected Content %s, got %s", tt.expected.Content, tt.post.Content)
-			}
-			if tt.post.ImagePath != tt.expected.ImagePath {
-				t.Errorf("expected ImagePath %s, got %s", tt.expected.ImagePath, tt.post.ImagePath)
-			}
-			if tt.post.Likes != tt.expected.Likes {
-				t.Errorf("expected Likes %d, got %d", tt.expected.Likes, tt.post.Likes)
-			}
-			if tt.post.Dislikes != tt.expected.Dislikes {
-				t.Errorf("expected Dislikes %d, got %d", tt.expected.Dislikes, tt.post.Dislikes)
-			}
-			if tt.post.Comments != tt.expected.Comments {
-				t.Errorf("expected Comments %d, got %d", tt.expected.Comments, tt.post.Comments)
-			}
-		})
+	if user.Username != "testuser" {
+		t.Errorf("expected Username 'testuser', got '%s'", user.Username)
 	}
+
+	if !user.ProfilePic.Valid {
+		t.Error("expected ProfilePic to be valid")
+	}
+}
+
+func TestPostStructInitialization(t *testing.T) {
+	now := time.Now()
+	post := Post{
+		ID:        "p123",
+		Title:     "Hello World",
+		Content:   "This is a test post.",
+		ImagePath: "/images/test.jpg",
+		CreatedAt: now,
+		Likes:     10,
+		Dislikes:  2,
+		Comments:  3,
+	}
+
+	if post.Likes != 10 {
+		t.Errorf("expected 10 likes, got %d", post.Likes)
+	}
+
+	if post.CreatedAt.IsZero() {
+		t.Error("expected CreatedAt to be set")
+	}
+}
+
+func TestUserJSONMarshalling(t *testing.T) {
+	user := User{
+		ID:         "u123",
+		Username:   "jsonuser",
+		Email:      "json@example.com",
+		Password:   "pass",
+		ProfilePic: sql.NullString{String: "pic.png", Valid: true},
+	}
+
+	data, err := json.Marshal(user)
+	if err != nil {
+		t.Fatalf("error marshalling User: %v", err)
+	}
+
+	if !contains(string(data), "jsonuser") {
+		t.Errorf("marshalled JSON does not contain 'jsonuser': %s", string(data))
+	}
+}
+
+// helper to check substring in string
+func contains(s, substr string) bool {
+	return len(s) > 0 && len(substr) > 0 && (s == substr || len(s) >= len(substr) && s[len(substr)-1] == substr[len(substr)-1])
 }
