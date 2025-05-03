@@ -198,16 +198,38 @@ func fetchUserPostsForPosts(userID string) ([]posts.Post, error) {
 
 func fetchUserPostsForLikes(userID string) ([]posts.Post, error) {
 	rows, err := db.Globaldb.Query(`
-        SELECT p.id, p.user_id, p.title, p.content, p.imagepath, p.post_at, p.likes, p.dislikes, p.comments,
-               u.username, u.profile_pic, c.id AS category_id, c.name AS category_name
-        FROM posts p
-        JOIN users u ON p.user_id = u.id
-        LEFT JOIN post_categories pc ON p.id = pc.post_id
-        LEFT JOIN categories c ON pc.category_id = c.id
-        JOIN reaction r ON p.id = r.post_id
+			SELECT p.id, p.user_id, p.title, p.content, p.image_path, p.created_at, p.likes, p.dislikes,
+			u.username, u.profile_pic,
+			GROUP_CONCAT(c.id) AS category_ids, GROUP_CONCAT(c.name) AS category_names,
+			com.id, com.user_id, com.content, com.created_at,
+    	(SELECT COUNT(*) FROM comments WHERE post_id = p.id) AS total_comments  -- Correct count of all comments per post
+		FROM posts p
+		JOIN users u ON p.user_id = u.id
+		LEFT JOIN post_categories pc ON p.id = pc.post_id
+		LEFT JOIN categories c ON pc.category_id = c.id
+		LEFT JOIN comments com ON p.id = com.post_id
+        JOIN likes r ON p.id = r.post_id
         WHERE r.user_id = ? AND r.like = 1
-        ORDER BY p.post_at DESC
+			GROUP BY p.id, com.id
+			ORDER BY p.created_at DESC
     `, userID)
+
+	// rows, err := db.Globaldb.Query(`
+    //     SELECT p.id, p.user_id, p.title, p.content, p.image_path, p.created_at, p.likes, p.dislikes,
+    //     u.username, u.profile_pic,
+    //     GROUP_CONCAT(c.id) AS category_ids, GROUP_CONCAT(c.name) AS category_names,
+    //     com.id, com.user_id, com.content, com.created_at,
+    // 	(SELECT COUNT(*) FROM comments WHERE post_id = p.id) AS total_comments  -- Correct count of all comments per post
+	// 	FROM posts p
+	// 	JOIN users u ON p.user_id = u.id
+	// 	LEFT JOIN post_categories pc ON p.id = pc.post_id
+	// 	LEFT JOIN categories c ON pc.category_id = c.id
+	// 	LEFT JOIN comments com ON p.id = com.post_id
+	// 	WHERE p.user_id = ?
+    //     GROUP BY p.id, com.id
+    //     ORDER BY p.created_at DESC
+    // `, userID)
+
 	if err != nil {
 		return nil, err
 	}
@@ -217,8 +239,15 @@ func fetchUserPostsForLikes(userID string) ([]posts.Post, error) {
 	var postTime time.Time
 	for rows.Next() {
 		var post posts.Post
-		var categoryID sql.NullInt64
+		var categoryID sql.NullString
 		var categoryName sql.NullString
+
+		var commentID sql.NullString
+		var commentUserID sql.NullString
+		var commentContent sql.NullString
+		var commentCreatedAt sql.NullTime
+		var totalCount int
+
 		err := rows.Scan(
 			&post.ID,
 			&post.UserID,
@@ -228,11 +257,16 @@ func fetchUserPostsForLikes(userID string) ([]posts.Post, error) {
 			&postTime,
 			&post.Likes,
 			&post.Dislikes,
-			&post.Comments,
 			&post.Username,
 			&post.ProfilePic,
 			&categoryID,
 			&categoryName,
+
+			&commentID,
+			&commentUserID,
+			&commentContent,
+			&commentCreatedAt,
+			&totalCount,
 		)
 		if err != nil {
 			return nil, err
@@ -272,7 +306,9 @@ func renderCreatedTemplateForPosts(w http.ResponseWriter, postss []posts.Post, u
 }
 
 func renderCreatedTemplateForLikes(w http.ResponseWriter, postss []posts.Post, userID string) error {
-	tmpl, err := template.ParseFiles("templates/liked.html")
+	basePath, _ := os.Getwd() // Gets the root directory where the app runs
+	templatePath := filepath.Join(basePath, "internal", "web", "templates", "liked.html")
+	tmpl, err := template.ParseFiles(templatePath)
 	if err != nil {
 		http.Error(w, "Error loading template", http.StatusInternalServerError)
 		return err
