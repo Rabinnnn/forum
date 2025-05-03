@@ -5,16 +5,25 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"strconv"
-	"time"
 	"os"
 	"path/filepath"
+	"strconv"
+	"time"
 
 	//"forum/xerrors"
+	"database/sql"
 	"forum/internal/db"
+	// "forum/internal/auth"
 	"forum/internal/posts"
 	"forum/internal/xerrors"
 )
+
+// Global variables
+var (
+	templates *template.Template
+	database  *sql.DB
+)
+
 
 type CategoryHandler struct{}
 
@@ -33,6 +42,7 @@ func (ch *CategoryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			xerrors.RenderErrorPage(w, http.StatusMethodNotAllowed, xerrors.ErrMethodNotAllowed)
 		}
 	case "/category":
+		
 		if r.Method == http.MethodGet {
 			categoryName := r.URL.Query().Get("name")
 			if categoryName == "" {
@@ -143,16 +153,41 @@ func (ch *CategoryHandler) handleGetPostsByCategoryName(w http.ResponseWriter, r
 	// 	}
 	// }
 
+	// userID, isLoggedIn := auth.GetUserIDFromSession(r)
+	// if userID == "" {
+	// 	// Handle "not found" case
+	// 	http.Error(w, "User nooot found", http.StatusNotFound)
+	// 	return
+	// }
+	// var user *auth.User
+	// if isLoggedIn {
+	// 	// Get user data
+	// 	//var err error
+	// 	user, err = auth.GetUserByID(database, userID)
+	// 	if err != nil {
+	// 		//log.Printf("Error fetching user: %v", err)
+	// 		http.Error(w, "Error fetching user", http.StatusNotFound)
+	// 		return
+	// 	} 
+
+	// 	if user == nil {
+	// 		// Handle "not found" case
+	// 		http.Error(w, "User not found", http.StatusNotFound)
+	// 		return
+	// 	}
+	// }	
 	data := struct {
 		IsLoggedIn    bool
 		Posts         []posts.Post
+		// User       *auth.User
 		CurrentUserID string
 	}{
 		IsLoggedIn:    isLoggedIn,
 		Posts:         postss,
 		CurrentUserID: currentUserID,
+		// User: user,
 	}
-
+	
 	// tmpl, err := template.ParseFiles("templates/category_posts.html")
 	// if err != nil {
 	// 	log.Printf("Error parsing category posts template: %v", err)

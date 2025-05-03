@@ -31,10 +31,10 @@ function postReaction(event) {
             //throw new Error('Session expired. Please sign in again.');
         }
         // if unauthorized redirect to login
-        // if (response.status === 401) {
-        //     window.location.href = '/login';
-        //     throw new Error('Please sign in to react to posts');
-        // }
+        if (response.status === 401) {
+            window.location.href = '/login';
+            throw new Error('Please sign in to react to posts');
+        }
         return response.json();
     })
     .then(data => {

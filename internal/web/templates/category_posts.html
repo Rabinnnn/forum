@@ -19,9 +19,12 @@
                 <i class="fas fa-bars"></i>
             </button>
             <div class="nav-right">
+                {{if .IsLoggedIn}}
                 <button id="create-post-btn" class="btn btn-primary" onclick="window.location.href='/create'">
-                    <i class="fas fa-plus"></i> 
+                    <i class="fas fa-plus"></i> Create Post
                 </button>
+                    
+                {{end}}
                
                 {{if not .IsLoggedIn}}
                     <button class="btn btn-outline" onclick="window.location.href='/login'">
@@ -34,7 +37,7 @@
                     <button class="btn btn-outline" onclick="window.location.href='/profile/{{.CurrentUserID}}'">
                         <i class="fas fa-user"></i> Profile
                     </button>
-                    <button class="btn btn-primary" onclick="window.location.href='/signout'">
+                    <button class="btn btn-primary" onclick="window.location.href='/logout'">
                         <i class="fas fa-sign-out-alt"></i> Sign Out
                     </button>
                 {{end}}
@@ -124,6 +127,25 @@
                     </button>
                     </div>
                 </div>
+                <div class="comments-section" id="comments-section-{{.ID}}" style="display: none;">
+                    {{if $.IsLoggedIn}}  <!-- Note the $.IsLoggedIn to access the root context -->
+                    <div class="comment-form-container">
+                        <form class="comment-form" onsubmit="submitComment(event, '{{.ID}}', '{{$.CurrentUserID}}' )">
+                            <textarea 
+                                class="comment-input" 
+                                placeholder="Write a comment..." 
+                                required
+                            ></textarea>
+                            <button type="submit" class="btn btn-primary">Post Comment</button>
+                        </form>
+                    </div>
+                    {{else}}
+                        <p class="login-prompt">Please <a href="/login">login</a> to comment.</p>
+                    {{end}}
+                    
+                    
+                </div>
+
                 
                 {{end}}
             </div>
