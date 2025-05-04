@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"unicode"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -47,12 +48,15 @@ func (h *AuthHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 			errors.UsernameError = "Username is required."
 		}
 		if email == "" {
-			errors.EmailError = "Email is not valid"
+			errors.EmailError = "Email is required"
 		}
 		if password == "" {
 			errors.PasswordError = "Password is required."
 		} else if password != confirmPassword {
 			errors.PasswordError = "Passwords do not match."
+		}else if !ValidatePassword(password) {
+			errors.PasswordError = "Password must be at least 8 characters, comprising of capital and small letters, numbers, and special characters"
+			//hasError = true
 		}
 
 		if errors.UsernameError != "" || errors.EmailError != "" || errors.PasswordError != "" {
@@ -100,8 +104,25 @@ func (h *AuthHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 }
 
-// to be implemented
-// func isEmailValid(email string) bool {
-// 	_, err := mail.ParseAddress(email)
-// 	return err == nil
-// }
+func ValidatePassword(password string) bool {
+	if len(password) < 8 {
+		return false
+	}
+	hasLower := false
+	hasUpper := false
+	hasNumber := false
+	hasSpecial := false
+	for _, char := range password {
+		switch {
+		case unicode.IsLower(char):
+			hasLower = true
+		case unicode.IsUpper(char):
+			hasUpper = true
+		case unicode.IsDigit(char):
+			hasNumber = true
+		case unicode.IsPunct(char) || unicode.IsSymbol(char):
+			hasSpecial = true
+		}
+	}
+	return hasLower && hasUpper && hasNumber && hasSpecial
+}
