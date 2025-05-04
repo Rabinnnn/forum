@@ -115,7 +115,7 @@
                     </div>
                       <!-- Comment Button with Redirect -->
                     <div class="action-container">
-                        <button class="action-btn comment-btn"  data-post-id="{{.ID}}">
+                        <button class="action-btn comment-btn"  data-post-id="{{.ID}}" onclick="window.location.href='/?id={{.ID}}'">
                             <i class="fas fa-comment"></i>
                             <span class="count" id="comments-{{.ID}}">{{.CommentCount}}</span>
                         </button>
