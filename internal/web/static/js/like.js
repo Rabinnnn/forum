@@ -27,8 +27,8 @@ function postReaction(event) {
         // if the content type is not json then redirect to login page
         if (!contentType || !contentType.includes("application/json")) {
 
-           // window.location.href = '/login';
-            //throw new Error('Session expired. Please sign in again.');
+           window.location.href = '/login';
+            throw new Error('Session expired. Please sign in again.');
         }
         // if unauthorized redirect to login
         if (response.status === 401) {
