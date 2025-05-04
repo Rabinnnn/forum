@@ -44,6 +44,10 @@ func ServeHome(w http.ResponseWriter, r *http.Request) {
 		user, err := auth.GetUserByID(database, userID)
 		if err != nil {
 			log.Printf("Error fetching user: %v", err)
+		}else if user == nil {
+			// Handle "not found" case
+			http.Error(w, "User not found", http.StatusNotFound)
+			return
 		} else {
 			data.User = user
 		}
@@ -64,6 +68,7 @@ func ServeHome(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Error executing template: %v", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
+	
 }
 
 // middleware for logging requests
@@ -126,6 +131,12 @@ func main() {
 
 	http.HandleFunc("/react", likes.HandleReactions)
 	http.HandleFunc("/created", filters.CreatedPosts)
+	http.HandleFunc("/liked", filters.LikedPosts)
+
+	categoryHandler := filters.NewCategoryHandler()
+	http.Handle("/categories", categoryHandler)
+	http.Handle("/category", categoryHandler)
+
 
 
 

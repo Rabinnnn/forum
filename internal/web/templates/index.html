@@ -45,7 +45,7 @@
                 </button>
                 <div class="mobile-menu-content">
                     <ul>
-                        <li><a href="/category?name=General%20News">General</a></li>
+                        <li><a href="/category?name=General">General</a></li>
                         <li><a href="/category?name=Entertainment">Entertainment</a></li>
                         <li><a href="/category?name=Health">Health</a></li> 
                         <li><a href="/category?name=Technology">Technology</a></li> 
@@ -129,6 +129,7 @@
                                             <span class="comment-time">{{.GetCreatedAt.Format "Jan 02, 2006 15:04"}}</span>
                                         </div>
                                         <p class="comment-content" id="comment-content-{{.ID}}">{{.GetContent}}</p>
+                                    {{if $.IsLoggedIn}}
                                         {{if eq .UserID $.User.ID}}
                                         <!-- <div id="debug-user-id">Debug User ID: {{if $.User}}{{$.User.ID}}{{else}}NULL{{end}}</div> -->
 
@@ -144,6 +145,7 @@
                                             </form>
                                         </div>
                                         {{end}}
+                                    {{end}}
                                          <!-- Comment Reaction Buttons -->
                                         <div class="comment-reaction-buttons">
                                             <div class="action-container">
@@ -188,7 +190,7 @@
 
     <h3>Categories</h3>
     <ul class="category-list">
-        <li><a href="/category?name=General%20News">General</a></li>
+        <li><a href="/category?name=General">General</a></li>
         <li><a href="/category?name=Entertainment">Entertainment</a></li>
         <li><a href="/category?name=Health">Health</a></li> 
         <li><a href="/category?name=Technology">Technology</a></li> 

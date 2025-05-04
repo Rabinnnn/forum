@@ -69,9 +69,9 @@
                         <span class="count" id="likes-{{.ID}}">{{.Likes}}</span>
                     </button>
                     </div>
-                        <!-- Comment Button with Redirect -->
+                        <!-- Comment Button with Redirect  -->
                         <div class="action-container">
-                            <button class="action-btn comment-btn"  data-post-id="{{.ID}}" onclick="window.location.href='/?id={{.ID}}'">
+                            <button class="action-btn comment-btn"  data-post-id="{{.ID}}">
                                 <i class="fas fa-comment"></i>
                                 <span class="count" id="comments-{{.ID}}">{{.CommentCount}}</span>
                             </button>
@@ -105,6 +105,6 @@
     <li><a href="/category?name=Politics">Politics</a></li>
 </ul>
 </div>
-   
+<script src="../static/js/like.js"></script>   
 </body>
 </html>
