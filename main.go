@@ -3,17 +3,18 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"forum/internal/auth"
+	"forum/internal/comments"
+	"forum/internal/db"
+	"forum/internal/filters"
+	"forum/internal/likes"
+	"forum/internal/posts"
+	"forum/internal/xerrors"
 	"html/template"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
-	"forum/internal/likes"
-	"forum/internal/filters"
-	"forum/internal/comments"
-	"forum/internal/auth"
-	"forum/internal/db"
-	"forum/internal/posts"
 )
 
 // Global variables
@@ -58,6 +59,12 @@ func ServeHome(w http.ResponseWriter, r *http.Request) {
 	posts, err := postService.GetAllPosts()
 	if err != nil {
 		log.Printf("Error fetching posts: %v", err)
+		xerrors.RenderErrorPage(w,http.StatusNotFound,xerrors.ErrPageNotFound)
+		
+		return
+	}
+	if len(posts)==0{
+		log.Println("No posts found.")
 	} else {
 		data.Posts = posts
 	}
@@ -78,6 +85,38 @@ func logRequest(handler http.HandlerFunc) http.HandlerFunc {
 		log.Printf("Cookies: %v", r.Cookies())
 		handler(w, r)
 	}
+}
+func requireAuth(handler http.HandlerFunc) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        userID, isLoggedIn := auth.GetUserIDFromSession(r)
+        
+        // Check if user is logged in
+        if !isLoggedIn || userID == "" {
+            // Prevent redirect loop by checking if we're already on the login page
+            if r.URL.Path == "/login" {
+                // Already on login page, just process it normally
+                handler(w, r)
+                return
+            }
+            
+            // Set a cookie to indicate where to redirect after login
+            returnCookie := &http.Cookie{
+                Name:     "return_to",
+                Value:    r.URL.Path,
+                Path:     "/",
+                MaxAge:   300, // 5 minutes expiration
+                HttpOnly: true,
+            }
+            http.SetCookie(w, returnCookie)
+            
+            // Redirect to login page
+            http.Redirect(w, r, "/login", http.StatusSeeOther)
+            return
+        }
+        
+        // User is authenticated, proceed with the handler
+        handler(w, r)
+    }
 }
 
 func main() {
@@ -115,23 +154,23 @@ func main() {
 
 	// Register routes
 	http.HandleFunc("/", logRequest(ServeHome))
-	http.HandleFunc("/login", logRequest(authHandler.LoginHandler))
-	http.HandleFunc("/register", logRequest(authHandler.RegisterHandler))
-	http.HandleFunc("/logout", logRequest(authHandler.LogoutHandler))
-	http.HandleFunc("/create", logRequest(postHandler.CreatePostHandler))
-	http.HandleFunc("/posts", logRequest(postHandler.GetAllPostsHandler))
-	http.HandleFunc("/profile/", logRequest(authHandler.ProfileHandler)) // Note the trailing slash
-	http.HandleFunc("/comments", commentHandler.CreateComment)
-	http.HandleFunc("/comments/post", commentHandler.GetCommentsForPost)
-	http.HandleFunc("/editcomment", comments.HandleEditComment)
-	http.HandleFunc("/deletecomment", comments.HandleDeleteComment)
-	http.HandleFunc("/commentreact", comments.HandleCommentReactions)
+	http.HandleFunc("/login", requireAuth(logRequest(authHandler.LoginHandler)))
+	http.HandleFunc("/register", requireAuth(logRequest(authHandler.RegisterHandler)))
+	http.HandleFunc("/logout", requireAuth(logRequest(authHandler.LogoutHandler)))
+	http.HandleFunc("/create", requireAuth(logRequest(postHandler.CreatePostHandler)))
+	http.HandleFunc("/posts", requireAuth(logRequest(postHandler.GetAllPostsHandler)))
+	http.HandleFunc("/profile/", requireAuth(logRequest(authHandler.ProfileHandler)) )// Note the trailing slash
+	http.HandleFunc("/comments",requireAuth( commentHandler.CreateComment))
+	http.HandleFunc("/comments/post", requireAuth(commentHandler.GetCommentsForPost))
+	http.HandleFunc("/editcomment", requireAuth(comments.HandleEditComment))
+	http.HandleFunc("/deletecomment", requireAuth(comments.HandleDeleteComment))
+	http.HandleFunc("/commentreact", requireAuth(comments.HandleCommentReactions))
 
 
 
-	http.HandleFunc("/react", likes.HandleReactions)
-	http.HandleFunc("/created", filters.CreatedPosts)
-	http.HandleFunc("/liked", filters.LikedPosts)
+	http.HandleFunc("/react", requireAuth(likes.HandleReactions))
+	http.HandleFunc("/created", requireAuth(filters.CreatedPosts))
+	http.HandleFunc("/liked", requireAuth(filters.LikedPosts))
 
 	categoryHandler := filters.NewCategoryHandler()
 	http.Handle("/categories", categoryHandler)
