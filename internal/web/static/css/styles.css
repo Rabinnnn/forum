@@ -2,7 +2,7 @@
 body {
     margin: 0;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    background: #829a7a;
     background-size: 400% 400%;
     animation: gradientAnimation 30s ease infinite;
     /* background-image: url('/internal/web/static/images/plainGreenish.jpeg'); */
