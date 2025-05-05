@@ -154,9 +154,9 @@ func main() {
 
 	// Register routes
 	http.HandleFunc("/", logRequest(ServeHome))
-	http.HandleFunc("/login", requireAuth(logRequest(authHandler.LoginHandler)))
-	http.HandleFunc("/register", requireAuth(logRequest(authHandler.RegisterHandler)))
-	http.HandleFunc("/logout", requireAuth(logRequest(authHandler.LogoutHandler)))
+	http.HandleFunc("/login", logRequest(authHandler.LoginHandler))
+	http.HandleFunc("/register", logRequest(authHandler.RegisterHandler))
+	http.HandleFunc("/logout", logRequest(authHandler.LogoutHandler))
 	http.HandleFunc("/create", requireAuth(logRequest(postHandler.CreatePostHandler)))
 	http.HandleFunc("/posts", requireAuth(logRequest(postHandler.GetAllPostsHandler)))
 	http.HandleFunc("/profile/", requireAuth(logRequest(authHandler.ProfileHandler)) )// Note the trailing slash
