@@ -3,6 +3,12 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"html/template"
+	"log"
+	"net/http"
+	"os"
+	"path/filepath"
+
 	"forum/internal/auth"
 	"forum/internal/comments"
 	"forum/internal/db"
@@ -10,11 +16,6 @@ import (
 	"forum/internal/likes"
 	"forum/internal/posts"
 	"forum/internal/xerrors"
-	"html/template"
-	"log"
-	"net/http"
-	"os"
-	"path/filepath"
 )
 
 // Global variables
@@ -45,7 +46,7 @@ func ServeHome(w http.ResponseWriter, r *http.Request) {
 		user, err := auth.GetUserByID(database, userID)
 		if err != nil {
 			log.Printf("Error fetching user: %v", err)
-		}else if user == nil {
+		} else if user == nil {
 			// Handle "not found" case
 			http.Error(w, "User not found", http.StatusNotFound)
 			return
@@ -59,11 +60,11 @@ func ServeHome(w http.ResponseWriter, r *http.Request) {
 	posts, err := postService.GetAllPosts()
 	if err != nil {
 		log.Printf("Error fetching posts: %v", err)
-		xerrors.RenderErrorPage(w,http.StatusNotFound,xerrors.ErrPageNotFound)
-		
+		xerrors.RenderErrorPage(w, http.StatusNotFound, xerrors.ErrPageNotFound)
+
 		return
 	}
-	if len(posts)==0{
+	if len(posts) == 0 {
 		log.Println("No posts found.")
 	} else {
 		data.Posts = posts
@@ -75,7 +76,6 @@ func ServeHome(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Error executing template: %v", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
-	
 }
 
 // middleware for logging requests
@@ -86,37 +86,38 @@ func logRequest(handler http.HandlerFunc) http.HandlerFunc {
 		handler(w, r)
 	}
 }
+
 func requireAuth(handler http.HandlerFunc) http.HandlerFunc {
-    return func(w http.ResponseWriter, r *http.Request) {
-        userID, isLoggedIn := auth.GetUserIDFromSession(r)
-        
-        // Check if user is logged in
-        if !isLoggedIn || userID == "" {
-            // Prevent redirect loop by checking if we're already on the login page
-            if r.URL.Path == "/login" {
-                // Already on login page, just process it normally
-                handler(w, r)
-                return
-            }
-            
-            // Set a cookie to indicate where to redirect after login
-            returnCookie := &http.Cookie{
-                Name:     "return_to",
-                Value:    r.URL.Path,
-                Path:     "/",
-                MaxAge:   300, // 5 minutes expiration
-                HttpOnly: true,
-            }
-            http.SetCookie(w, returnCookie)
-            
-            // Redirect to login page
-            http.Redirect(w, r, "/login", http.StatusSeeOther)
-            return
-        }
-        
-        // User is authenticated, proceed with the handler
-        handler(w, r)
-    }
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, isLoggedIn := auth.GetUserIDFromSession(r)
+
+		// Check if user is logged in
+		if !isLoggedIn || userID == "" {
+			// Prevent redirect loop by checking if we're already on the login page
+			if r.URL.Path == "/login" {
+				// Already on login page, just process it normally
+				handler(w, r)
+				return
+			}
+
+			// Set a cookie to indicate where to redirect after login
+			returnCookie := &http.Cookie{
+				Name:     "return_to",
+				Value:    r.URL.Path,
+				Path:     "/",
+				MaxAge:   300, // 5 minutes expiration
+				HttpOnly: true,
+			}
+			http.SetCookie(w, returnCookie)
+
+			// Redirect to login page
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
+		}
+
+		// User is authenticated, proceed with the handler
+		handler(w, r)
+	}
 }
 
 func main() {
@@ -151,7 +152,6 @@ func main() {
 	authHandler := auth.NewAuthHandler(database, templates)
 	commentHandler := comments.NewCommentHandler(database)
 
-
 	// Register routes
 	http.HandleFunc("/", logRequest(ServeHome))
 	http.HandleFunc("/login", logRequest(authHandler.LoginHandler))
@@ -159,14 +159,12 @@ func main() {
 	http.HandleFunc("/logout", logRequest(authHandler.LogoutHandler))
 	http.HandleFunc("/create", requireAuth(logRequest(postHandler.CreatePostHandler)))
 	http.HandleFunc("/posts", requireAuth(logRequest(postHandler.GetAllPostsHandler)))
-	http.HandleFunc("/profile/", requireAuth(logRequest(authHandler.ProfileHandler)) )// Note the trailing slash
-	http.HandleFunc("/comments",requireAuth( commentHandler.CreateComment))
+	http.HandleFunc("/profile/", requireAuth(logRequest(authHandler.ProfileHandler))) // Note the trailing slash
+	http.HandleFunc("/comments", requireAuth(commentHandler.CreateComment))
 	http.HandleFunc("/comments/post", requireAuth(commentHandler.GetCommentsForPost))
 	http.HandleFunc("/editcomment", requireAuth(comments.HandleEditComment))
 	http.HandleFunc("/deletecomment", requireAuth(comments.HandleDeleteComment))
 	http.HandleFunc("/commentreact", requireAuth(comments.HandleCommentReactions))
-
-
 
 	http.HandleFunc("/react", requireAuth(likes.HandleReactions))
 	http.HandleFunc("/created", requireAuth(filters.CreatedPosts))
@@ -176,12 +174,9 @@ func main() {
 	http.Handle("/categories", categoryHandler)
 	http.Handle("/category", categoryHandler)
 
-
-
-
 	// Serve static files (CSS, JS, images)
 	fs := http.FileServer(http.Dir("internal/web/static"))
-	http.Handle("/static/", http.StripPrefix("/static/", fs))
+	http.Handle("/static/", restrictedStaticFileHandler(http.StripPrefix("/static/", fs)))
 
 	// Create uploads directory
 	if err := os.MkdirAll("internal/web/static/uploads", 0o755); err != nil {
@@ -193,4 +188,18 @@ func main() {
 	if err := http.ListenAndServe(":3000", nil); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
+}
+
+// Middleware to enforce authentication before serving static files
+func restrictedStaticFileHandler(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		userID, isLoggedIn := auth.GetUserIDFromSession(r)
+		if !isLoggedIn || userID == "" {
+			http.Error(w, "Unauthorized Access", http.StatusUnauthorized)
+			return
+		}
+
+		// Serve the static file if the user is authenticated
+		next.ServeHTTP(w, r)
+	})
 }
