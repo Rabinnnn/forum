@@ -76,13 +76,32 @@
         {{if .Posts}}
             <div class="posts-container">
                 {{range .Posts}}
-                    <div class="post">
-                        <h2>{{.Title}}</h2>
-                        <p>{{.Content}}</p>
-                        {{if .ImagePath}}
-                            <img src="{{.ImagePath}}" alt="Post image" class="post-image" onerror="this.onerror=null; this.src='/static/images/placeholder.png';">
-                        {{end}}
-                        
+                    <div class="post-card">
+                        <div class="post-header">
+                            <div class="post-avatar">
+                                {{if .ProfilePic.Valid}}
+                                    <img src="{{.ProfilePic.String}}" alt="Profile Picture" class="post-avatar-img">
+                                {{else}}
+                                    <div class="post-avatar-placeholder">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                {{end}}
+                            </div>
+                            <div class="post-info">
+    
+                                <h3>{{.Username}}</h3>
+                                <span class="timestamp">{{.PostTime}}</span>
+                            </div>
+                        </div>     
+
+                        <div class="post-content">
+                            <h2>{{.Title}}</h2>
+                            <p>{{.Content}}</p>
+                            {{if .ImagePath}}
+                            <img src="{{.ImagePath}}" alt="Post image" class="post-image">
+                            {{end}}
+                      </div>  
+                    </div>  
                         <div class="post-footer">
                             <div class="action-container">
                                 <button class="action-btn like-btn" onclick="event.stopPropagation();" data-post-id="{{.ID}}" data-action="like">
@@ -167,7 +186,7 @@
                                 {{end}}
                             </div>
                         </div>
-                    </div>
+                    <!-- </div> -->
                 {{end}}
             </div>
         {{else}}
