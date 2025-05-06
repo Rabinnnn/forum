@@ -21,7 +21,7 @@
                         <i class="fas fa-plus"></i> Create Post
                     </button>
                     {{if .User}}
-                        <span class="username">Welcome, {{.User.Username}}</span>
+                        <span class="username" style="color:white;">Welcome, {{.User.Username}}</span>
                         <button class="btn btn-outline" onclick="window.location.href='/profile/{{.User.ID}}'">
                             <i class="fas fa-user"></i> Profile
                         </button>
