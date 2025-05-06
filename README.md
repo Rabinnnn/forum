@@ -1,133 +1,117 @@
-#Run application
+# FORUM
 
-#step 1: Create  an executable 
-go build -o forum ./cmd
+## Overview
 
-#step 2:  run with the  followiing command 
-go run ./cmd/main.go
+This project is a web-based forum application that facilitates user communication through posts and comments. It incorporates features such as user authentication, post categorization, liking/disliking of content, and filtering mechanisms. The application is built using Go, utilizes SQLite for data storage, and is containerized using Docker for ease of deployment.
+## Features
 
+ ###   User Authentication
 
+- Registration with email, username, and password.
 
+- Login functionality with session management using cookies.
 
+- Encrypted password storage (Bonus).
 
+- Session expiration handling.
 
-```md
-# Forum Project
+ ###   Posts and Comments
 
-This project is a web-based discussion forum built using **Go** and **SQLite**. It allows users to communicate, create posts, comment, like/dislike posts, and filter content.
+- Creation of posts and comments by registered users.
 
----
+- Association of posts with one or more categories.
+
+- Visibility of posts and comments to all users.
+
+###    Likes and Dislikes
+
+- Registered users can like or dislike posts and comments.
+
+- Display of like and dislike counts to all users.
+
+###    Filtering Mechanism
+
+- Filter posts by categories.
+
+- Filter posts created by the logged-in user.
+
+- Filter posts liked by the logged-in user.
+
+## Technologies Used
+- Backend: Go (Golang)
+
+- Database: SQLite
+
+- Authentication: Sessions and cookies 
+
+- Password Encryption: bcrypt 
+
+- Containerization: Docker
+   
+
+## Installation and Setup
+
+- **Clone the Repository and navigate to the project directory**
+```bash
+$  git clone https://learn.zone01kisumu.ke/git/rotieno/forum.git
+$  cd forum
 ```
 
-## 🏗 Project Structure
+- **Build the Docker Image**
+```bash
+$  docker build -t forum .
 
 ```
-forum/
-│── cmd/                      # Entry point of the application
-│   └── main.go                # Initializes the application
-│── internal/
-│   ├── auth/                  # Authentication (Login, Signup, Sessions)
-│   │   ├── handlers.go         # HTTP handlers for authentication
-│   │   ├── service.go          # Business logic for authentication
-│   │   ├── model.go            # User model (struct)
-│   ├── posts/                 # Posts and comments module
-│   │   ├── handlers.go         # HTTP handlers for posts
-│   │   ├── service.go          # Business logic for posts/comments
-│   │   ├── model.go            # Post and Comment models
-│   ├── likes/                 # Likes and dislikes module
-│   │   ├── handlers.go         # HTTP handlers for likes/dislikes
-│   │   ├── service.go          # Business logic for likes
-│   │   ├── model.go            # Like model
-│   ├── db/                    # Database connection
-│   │   ├── sqlite.go           # SQLite initialization
-│   │   ├── migrations/         # SQL migration files
-│── web/                       # Static assets
-│   ├── templates/              # HTML templates
-│   ├── static/                 # CSS/JS files
-│── config/                    # Configuration files (env, etc.)
-│── Dockerfile                 # Docker configuration
-│── go.mod                     # Go module dependencies
-│── README.md                  # Documentation
+
+- **Run the Docker Container**
+```bash
+$  docker run -p 8080:8080 forum
+
 ```
+- Alternatively, instead of using docker you can run the program directly after cloning the repo by navigating to the directory then using the following command:
+```bash
+$ go run .
 ```
+- **Access the Application**
+
+    Open your web browser and navigate to http://localhost:8080
 
 
-## 🚀 Features
+## Usage
 
-- ✅ **User Authentication** (Login, Signup, Sessions)
-- ✅ **Create, Edit, and Delete Posts & Comments**
-- ✅ **Like/Dislike Posts & Comments**
-- ✅ **Filter Posts by Category**
-- ✅ **SQLite Database for Storage**
-- ✅ **Docker Support for Easy Deployment**
-- ✅ **Secure Password Storage using bcrypt**
-- ✅ **Minimalist UI using HTML, CSS, and Go Templates**
+- Registration: Users can register by providing a unique email, username, and password. The system will return an error if the email is already taken.
 
----
+- Login: Registered users can log in using their credentials. Upon successful login, a session is created and managed via cookies.
 
-## 🛠 Setup Instructions
+- Creating Posts: Logged-in users can create posts and associate them with one or more categories.
 
-### 1️⃣ Clone the Repository
-```sh
-git clone https://github.com/Rabinnnn/forum.git
-cd forum
-```
+- Commenting: Logged-in users can comment on posts.
 
-### 2️⃣ Install Dependencies
-```sh
-go mod tidy
-```
+- Liking/Disliking: Logged-in users can like or dislike posts and comments. The counts are visible to all users.
 
-### 3️⃣ Run the Application
-```sh
-go run ./cmd
-```
+- Filtering: Users can filter posts by categories. Logged-in users can additionally filter by their own posts and liked posts.
 
-### 4️⃣ Open in Browser  
-Visit `http://localhost:8080` in your browser.
+## Error Handling
 
----
+The application handles various errors gracefully, including:
 
-## 🗃 Database Schema
-The application uses an SQLite database with the following tables:
+- HTTP status errors (e.g., 404 Not Found, 500 Internal Server Error).
 
-- **Users**: Stores user details
-- **Posts**: Stores user-generated posts
-- **Comments**: Stores comments on posts
-- **Likes**: Tracks likes/dislikes for posts and comments
+- Database errors (e.g., connection issues, query failures).
 
----
+- Authentication errors (e.g., invalid credentials, session expiration).
 
-## 🐳 Docker Support
 
-### 1️⃣ Build the Docker Image
-```sh
-docker build -t forum-app .
-```
 
-### 2️⃣ Run the Container
-```sh
-docker run -p 8080:8080 forum-app
-```
+## License
 
----
+This project is licensed under the MIT License. See the LICENSE file for details.
 
-## 📜 License
-This project is licensed under the **MIT License**.
+## Contributors
+- [Rabin Otieno](https://learn.zone01kisumu.ke/git/rotieno)
 
----
+- [Kevin Wasonga](https://learn.zone01kisumu.ke/git/kevwasonga)
 
-## 📩 Contact
-For any issues or contributions, feel free to submit a pull request or open an issue.
-```
+- [Franklyne Namayi](https://learn.zone01kisumu.ke/git/fnamayi)
 
----
-
-### 🛠 Key Improvements:
-1. **Added Headers** (`## Features`, `## Setup Instructions`)  
-2. **Formatted the File Tree** (inside a proper Markdown code block)  
-3. **Added Code Blocks** for commands (`git clone`, `go run`)  
-4. **Added Emojis** for visual appeal  
-5. **Improved Readability** with bullet points  
-
- 🚀 
+- [Granton Onyango](https://learn.zone01kisumu.ke/git/gonyango)
