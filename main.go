@@ -195,7 +195,8 @@ func restrictedStaticFileHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		userID, isLoggedIn := auth.GetUserIDFromSession(r)
 		if !isLoggedIn || userID == "" {
-			http.Error(w, "Unauthorized Access", http.StatusUnauthorized)
+			// http.Error(w, "Unauthorized Access", http.StatusUnauthorized)
+			xerrors.RenderErrorPage(w,http.StatusUnauthorized,xerrors.ErrUnauthorized)
 			return
 		}
 
