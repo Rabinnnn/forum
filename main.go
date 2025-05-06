@@ -176,7 +176,7 @@ func main() {
 
 	// Serve static files (CSS, JS, images)
 	fs := http.FileServer(http.Dir("internal/web/static"))
-	http.Handle("/static/", restrictedStaticFileHandler(http.StripPrefix("/static/", fs)))
+	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
 	// Create uploads directory
 	if err := os.MkdirAll("internal/web/static/uploads", 0o755); err != nil {
@@ -188,19 +188,4 @@ func main() {
 	if err := http.ListenAndServe(":3000", nil); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
-}
-
-// Middleware to enforce authentication before serving static files
-func restrictedStaticFileHandler(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		userID, isLoggedIn := auth.GetUserIDFromSession(r)
-		if !isLoggedIn || userID == "" {
-			// http.Error(w, "Unauthorized Access", http.StatusUnauthorized)
-			xerrors.RenderErrorPage(w,http.StatusUnauthorized,xerrors.ErrUnauthorized)
-			return
-		}
-
-		// Serve the static file if the user is authenticated
-		next.ServeHTTP(w, r)
-	})
 }
