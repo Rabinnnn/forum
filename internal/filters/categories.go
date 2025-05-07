@@ -74,9 +74,10 @@ func (ch *CategoryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (ch *CategoryHandler) checkAuthStatus(r *http.Request) bool {
 	//cookie, err := r.Cookie("session_token")
-	_, err := r.Cookie("session_token")
+	_, err := r.Cookie("session_id")
 
 	if err != nil {
+		fmt.Println("Errrrr: %v", err)
 		return false
 	}
 	// _, err = xerrors.ValidateSession(db.Globaldb, cookie.Value)
@@ -145,6 +146,7 @@ func (ch *CategoryHandler) handleGetPostsByCategoryName(w http.ResponseWriter, r
 	}
 
 	isLoggedIn := ch.checkAuthStatus(r)
+
 	var currentUserID string
 
 	// if cookie, err := r.Cookie("session_token"); err == nil {
@@ -179,8 +181,8 @@ func (ch *CategoryHandler) handleGetPostsByCategoryName(w http.ResponseWriter, r
 	data := struct {
 		IsLoggedIn    bool
 		Posts         []posts.Post
-		// User       *auth.User
 		CurrentUserID string
+		// User       *auth.User
 	}{
 		IsLoggedIn:    isLoggedIn,
 		Posts:         postss,
@@ -194,6 +196,9 @@ func (ch *CategoryHandler) handleGetPostsByCategoryName(w http.ResponseWriter, r
 	// 	xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrTemplateExec)
 	// 	return
 	// }
+
+	log.Printf("Template dataaaaa: IsLoggedIn=%v", data.IsLoggedIn)
+
 	basePath, _ := os.Getwd() // Gets the root directory where the app runs
 	templatePath := filepath.Join(basePath, "internal", "web", "templates", "category_posts.html")
 	tmpl, err := template.ParseFiles(templatePath)
