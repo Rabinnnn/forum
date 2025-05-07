@@ -54,6 +54,7 @@
                 </div>                 
 
                 <div class="post-content">
+                    <h2>{{.Title}}</h2>
                     <p>{{.Content}}</p>
                     {{if .ImagePath}}
                     <img src="{{.ImagePath}}" alt="Post image" class="post-image" onerror="this.onerror=null; this.src='/static/images/placeholder.png';">

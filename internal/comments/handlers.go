@@ -351,6 +351,8 @@ func HandleCommentReactions(w http.ResponseWriter, r *http.Request) {
 	// Get updated likes and dislikes counts
 	var likes, dislikes int
 	err = db.Globaldb.QueryRow("SELECT likes, dislikes FROM comments WHERE id = ?", req.CommentID).Scan(&likes, &dislikes)
+	fmt.Println("req.CommentID: %v", req.CommentID)
+
 	if err != nil {
 		fmt.Println("Error:", err)
 		w.Header().Set("Content-Type", "application/json")

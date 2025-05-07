@@ -13,7 +13,7 @@ import (
 	//"forum/xerrors"
 	"database/sql"
 	"forum/internal/db"
-	// "forum/internal/auth"
+	"forum/internal/auth"
 	"forum/internal/posts"
 	"forum/internal/xerrors"
 )
@@ -155,39 +155,44 @@ func (ch *CategoryHandler) handleGetPostsByCategoryName(w http.ResponseWriter, r
 	// 	}
 	// }
 
-	// userID, isLoggedIn := auth.GetUserIDFromSession(r)
-	// if userID == "" {
-	// 	// Handle "not found" case
-	// 	http.Error(w, "User nooot found", http.StatusNotFound)
-	// 	return
-	// }
-	// var user *auth.User
-	// if isLoggedIn {
-	// 	// Get user data
-	// 	//var err error
-	// 	user, err = auth.GetUserByID(database, userID)
-	// 	if err != nil {
-	// 		//log.Printf("Error fetching user: %v", err)
-	// 		http.Error(w, "Error fetching user", http.StatusNotFound)
-	// 		return
-	// 	} 
+	userID, isLoggedIn := auth.GetUserIDFromSession(r)
 
-	// 	if user == nil {
-	// 		// Handle "not found" case
-	// 		http.Error(w, "User not found", http.StatusNotFound)
-	// 		return
-	// 	}
-	// }	
+	if !isLoggedIn{
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	if userID == "" {
+		// Handle "not found" case
+		http.Error(w, "User nooot found", http.StatusNotFound)
+		return
+	}
+	var user *auth.User
+	if isLoggedIn {
+		// Get user data
+		//var err error
+		user, err = auth.GetUserByID(db.Globaldb, userID)
+		if err != nil {
+			//log.Printf("Error fetching user: %v", err)
+			http.Error(w, "Error fetching user", http.StatusNotFound)
+			return
+		} 
+
+		if user == nil {
+			// Handle "not found" case
+			http.Error(w, "User not found", http.StatusNotFound)
+			return
+		}
+	}	
 	data := struct {
 		IsLoggedIn    bool
 		Posts         []posts.Post
 		CurrentUserID string
-		// User       *auth.User
+		User       *auth.User
 	}{
 		IsLoggedIn:    isLoggedIn,
 		Posts:         postss,
 		CurrentUserID: currentUserID,
-		// User: user,
+		User: user,
 	}
 	
 	// tmpl, err := template.ParseFiles("templates/category_posts.html")
