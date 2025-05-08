@@ -295,6 +295,8 @@ async function loadComments(postId, currentUser) {
             const isAuthor = comment.user_id === currentUser; // Ensure correct key matching
             console.log('comment.user_id:', comment.user_id);
             console.log('CURRENT_USER_ID:', currentUser);
+            console.log('Comment.id:', comment);
+
 
             return `
             <div class="comment">

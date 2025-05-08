@@ -132,7 +132,8 @@ func HandleEditComment(w http.ResponseWriter, r *http.Request) {
 	var ownerID string
 	err := db.Globaldb.QueryRow("SELECT user_id FROM comments WHERE id = ?", commentID).Scan(&ownerID)
 	if err == sql.ErrNoRows {
-		http.Error(w, "Comment not found", http.StatusNotFound)
+		log.Printf("CommentID: %v", commentID)
+		http.Error(w, "Comment not foundddd", http.StatusNotFound)
 		return
 	} else if err != nil {
 		log.Printf("Error checking comment ownership: %v", err)
@@ -200,7 +201,9 @@ func HandleDeleteComment(w http.ResponseWriter, r *http.Request) {
 	var ownerID string
 	err = db.Globaldb.QueryRow("SELECT user_id FROM comments WHERE id = ?", commentID).Scan(&ownerID)
 	if err == sql.ErrNoRows {
-		http.Error(w, "Comment not found", http.StatusNotFound)
+		log.Printf("CommentID: %v", commentID)
+
+		http.Error(w, "Comment notttt found", http.StatusNotFound)
 		return
 	} else if err != nil {
 		log.Printf("Error checking comment ownership: %v", err)
