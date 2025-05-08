@@ -149,13 +149,15 @@ func (ch *CategoryHandler) handleGetPostsByCategoryName(w http.ResponseWriter, r
 
 	var currentUserID string
 
-	// if cookie, err := r.Cookie("session_token"); err == nil {
+	// if cookie, err := r.Cookie("session_id"); err == nil {
 	// 	if userID, err := xerrors.ValidateSession(db.Globaldb, cookie.Value); err == nil {
 	// 		currentUserID = userID
 	// 	}
 	// }
 
 	userID, isLoggedIn := auth.GetUserIDFromSession(r)
+	//  log.Printf("userIDDDDD: %v", userID)
+
 
 	if !isLoggedIn{
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
@@ -188,11 +190,13 @@ func (ch *CategoryHandler) handleGetPostsByCategoryName(w http.ResponseWriter, r
 		Posts         []posts.Post
 		CurrentUserID string
 		User       *auth.User
+		// UserID string
 	}{
 		IsLoggedIn:    isLoggedIn,
 		Posts:         postss,
 		CurrentUserID: currentUserID,
 		User: user,
+		// UserID: userID,
 	}
 	
 	// tmpl, err := template.ParseFiles("templates/category_posts.html")
@@ -203,6 +207,8 @@ func (ch *CategoryHandler) handleGetPostsByCategoryName(w http.ResponseWriter, r
 	// }
 
 	log.Printf("Template dataaaaa: IsLoggedIn=%v", data.IsLoggedIn)
+	// log.Printf("userIDDDDD: %v", data.User)
+
 
 	basePath, _ := os.Getwd() // Gets the root directory where the app runs
 	templatePath := filepath.Join(basePath, "internal", "web", "templates", "category_posts.html")

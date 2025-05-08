@@ -1,9 +1,11 @@
 package comments
 
 import (
+	// "bytes"
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	// "io"
 
 	//"fmt"
 	"forum/internal/db"
@@ -253,6 +255,25 @@ func HandleCommentReactions(w http.ResponseWriter, r *http.Request) {
 		CommentID string `json:"comment_id"`
 		Like      int `json:"like"` // 1 for like, 0 for dislike
 	}
+
+
+
+
+	// bodyBytes, x := io.ReadAll(r.Body)
+    // if x != nil {
+    //     http.Error(w, "Unable to read request body", http.StatusInternalServerError)
+    //     return
+    // }
+
+    // // Print the body content
+    // fmt.Println("Request Body:", string(bodyBytes))
+
+    // // Reset the request body so it can be read again
+    // r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
+
+
+
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		fmt.Println("Error:", err)
 		w.Header().Set("Content-Type", "application/json")

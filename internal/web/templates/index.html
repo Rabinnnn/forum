@@ -149,7 +149,10 @@
                                         </div>
                                         <p class="comment-content" id="comment-content-{{.ID}}">{{.GetContent}}</p>
                                     {{if $.IsLoggedIn}}
+                                    <!-- <p style="color: black;">UserID: {{ printf "%v" .UserID }}</p>
+                                    <p style="color: black;">User.ID: {{ printf "%v" $.User.ID }}</p> -->
                                         {{if eq .UserID $.User.ID}}
+                                      
                                         <!-- <div id="debug-user-id">Debug User ID: {{if $.User}}{{$.User.ID}}{{else}}NULL{{end}}</div> -->
 
                                         <div class="comment-actions">

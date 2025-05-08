@@ -146,6 +146,7 @@
                     {{end}}
                     
                     <div class="comments-list" id="comments-list-{{.ID}}" data-user-id="{{if $.User}}{{$.User.ID}}{{end}}">
+
                             <div class="comment">
                                 <div class="comment-header">
                                     <span class="comment-author">{{.Username}}</span>
@@ -153,7 +154,15 @@
                                 </div>
                                 <p class="comment-content" id="comment-content-{{.ID}}">{{.Content}}</p>
                             {{if $.IsLoggedIn}}
-                                {{if eq .UserID $.User.ID}}
+                            <!-- <p style="color: black;">UserID: {{ printf "%v" .UserID }}</p>
+                            <p style="color: black;">User.ID: {{ printf "%v" $.User.ID }}</p>
+\                            <p style="color: black;">Post username: {{ printf "%v" .Username }}</p>
+                            <p style="color: black;">Loggedin User: {{ printf "%v" $.User.Username }}</p> -->
+
+
+                            
+                                {{if eq $.User.Username .Username}}
+                                
                                 <!-- <div id="debug-user-id">Debug User ID: {{if $.User}}{{$.User.ID}}{{else}}NULL{{end}}</div> -->
 
                                 <div class="comment-actions">
@@ -186,7 +195,6 @@
                                     </div>
                                 </div>
                             </div>
-                                
                     </div>
                 </div>
 
