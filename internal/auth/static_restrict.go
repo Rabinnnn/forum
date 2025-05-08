@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"forum/internal/xerrors"
 	"log"
 	"net/http"
 	"path/filepath"
@@ -13,7 +14,7 @@ func SecureStaticHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Block directory listing attempts
 		if strings.HasSuffix(r.URL.Path, "/") {
-			http.Error(w, "Forbidden", http.StatusForbidden)
+			xerrors.RenderErrorPage(w, http.StatusForbidden, xerrors.ErrForbidden)
 			return
 		}
 
@@ -34,7 +35,7 @@ func SecureStaticHandler() http.Handler {
 		}
 
 		if ext == "" || !allowedExts[ext] {
-			http.Error(w, "Forbidden", http.StatusForbidden)
+			xerrors.RenderErrorPage(w, http.StatusForbidden, xerrors.ErrForbidden)
 			return
 		}
 
@@ -52,13 +53,13 @@ func SecureUploadHandler() http.Handler {
 		// Verify user is authenticated before allowing access to uploads
 		userID, isLoggedIn := GetUserIDFromSession(r)
 		if !isLoggedIn {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			xerrors.RenderErrorPage(w, http.StatusUnauthorized, xerrors.ErrUnauthorized)
 			return
 		}
 
 		// Block directory listing attempts
 		if strings.HasSuffix(r.URL.Path, "/") {
-			http.Error(w, "Forbidden", http.StatusForbidden)
+			xerrors.RenderErrorPage(w, http.StatusForbidden, xerrors.ErrForbidden)
 			return
 		}
 
