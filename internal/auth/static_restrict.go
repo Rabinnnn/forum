@@ -44,3 +44,28 @@ func SecureStaticHandler() http.Handler {
 		fs.ServeHTTP(w, r)
 	})
 }
+
+// secureUploadHandler provides secure access to uploaded files
+func SecureUploadHandler() http.Handler {
+	fs := http.FileServer(http.Dir("internal/web/static/uploads"))
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Verify user is authenticated before allowing access to uploads
+		userID, isLoggedIn := GetUserIDFromSession(r)
+		if !isLoggedIn {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		// Block directory listing attempts
+		if strings.HasSuffix(r.URL.Path, "/") {
+			http.Error(w, "Forbidden", http.StatusForbidden)
+			return
+		}
+
+		// Log access attempts
+		log.Printf("Upload access by user %T: %s", userID, r.URL.Path)
+
+		// Serve the file if all checks pass
+		fs.ServeHTTP(w, r)
+	})
+}
