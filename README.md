@@ -68,6 +68,19 @@ $  docker build -t forum .
 $  docker run -p 8080:3000 forum
 
 ```
+You can also build the docker image and run the container using the included script like this:
+- **Make the script executable**:
+
+```sh
+  chmod +x dockerScript.sh
+```
+
+- **Run the script**:
+
+```sh
+  ./dockerScript.sh
+```
+
 - Alternatively, instead of using docker you can run the program directly after cloning the repo by navigating to the directory then using the following command:
 ```bash
 $ go run .
