@@ -175,8 +175,8 @@ func main() {
 	http.Handle("/category", categoryHandler)
 
 	// Serve static files (CSS, JS, images)
-	fs := http.FileServer(http.Dir("internal/web/static"))
-	http.Handle("/static/", http.StripPrefix("/static/", fs))
+	http.Handle("/static/", http.StripPrefix("/static/", auth.SecureStaticHandler()))
+
 
 	// Create uploads directory
 	if err := os.MkdirAll("internal/web/static/uploads", 0o755); err != nil {
