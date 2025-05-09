@@ -2,6 +2,7 @@ package auth
 
 import (
 	"database/sql"
+	"forum/internal/xerrors"
 	"html/template"
 	"log"
 	"net/http"
@@ -44,7 +45,8 @@ func (h *AuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			log.Printf("Database error: %v", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			// http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrInternalServer)
 			return
 		}
 
@@ -68,5 +70,7 @@ func (h *AuthHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	// http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	xerrors.RenderErrorPage(w, http.StatusMethodNotAllowed, xerrors.ErrMethodNotAllowed)
+
 }

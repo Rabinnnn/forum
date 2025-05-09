@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"forum/internal/xerrors"
 	"log"
 	"net/http"
 	"strings"
@@ -101,7 +102,9 @@ func (h *AuthHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	// http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	xerrors.RenderErrorPage(w, http.StatusMethodNotAllowed, xerrors.ErrMethodNotAllowed)
+
 }
 
 func ValidatePassword(password string) bool {

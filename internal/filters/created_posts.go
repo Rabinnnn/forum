@@ -8,12 +8,13 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"time"
 	"strings"
+	"time"
 
 	"forum/internal/auth"
 	"forum/internal/db"
 	"forum/internal/posts"
+	"forum/internal/xerrors"
 )
 
 func CreatedPosts(w http.ResponseWriter, r *http.Request) {
@@ -29,7 +30,8 @@ func CreatedPosts(w http.ResponseWriter, r *http.Request) {
 	posts, err := fetchUserPostsForPosts(userID)
 	if err != nil {
 		log.Printf("Error fetching posts: %v", err)
-		http.Error(w, "Error fetching posts", http.StatusInternalServerError)
+		// http.Error(w, "Error fetching posts", http.StatusInternalServerError)
+		xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrInternalServer)
 		return
 	}
 
@@ -52,7 +54,8 @@ func LikedPosts(w http.ResponseWriter, r *http.Request) {
 	posts, err := fetchUserPostsForLikes(userID)
 	if err != nil {
 		log.Printf("Error fetching posts: %v", err)
-		http.Error(w, "Error fetching posts", http.StatusInternalServerError)
+		// http.Error(w, "Error fetching posts", http.StatusInternalServerError)
+		xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrInternalServer)
 		return
 	}
 
@@ -63,18 +66,9 @@ func LikedPosts(w http.ResponseWriter, r *http.Request) {
 }
 
 func validateUserSession(w http.ResponseWriter, r *http.Request) (string, error) {
-	// cookie, err := r.Cookie("session_token")
-	// if err != nil {
-	// 	http.Redirect(w, r, "/signin", http.StatusSeeOther)
-	// 	return "", err
-	// }
+
 	userID, _ := auth.GetUserIDFromSession(r)
 
-	//userID, err := utils.ValidateSession(db.Globaldb, cookie.Value)
-	// if err != nil {
-	// 	http.Redirect(w, r, "/signin", http.StatusSeeOther)
-	// 	return "", err
-	// }
 
 	return userID, nil
 }
@@ -290,7 +284,8 @@ func renderCreatedTemplateForPosts(w http.ResponseWriter, postss []posts.Post, u
 	templatePath := filepath.Join(basePath, "internal", "web", "templates", "created.html")
 	tmpl, err := template.ParseFiles(templatePath)
 	if err != nil {
-		http.Error(w, "Error loading template", http.StatusInternalServerError)
+		// http.Error(w, "Error loading template", http.StatusInternalServerError)
+		xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrInternalServer)
 		return err
 	}
 
@@ -310,7 +305,8 @@ func renderCreatedTemplateForLikes(w http.ResponseWriter, postss []posts.Post, u
 	templatePath := filepath.Join(basePath, "internal", "web", "templates", "liked.html")
 	tmpl, err := template.ParseFiles(templatePath)
 	if err != nil {
-		http.Error(w, "Error loading template", http.StatusInternalServerError)
+		// http.Error(w, "Error loading template", http.StatusInternalServerError)
+		xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrInternalServer)
 		return err
 	}
 

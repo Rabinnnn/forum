@@ -165,9 +165,11 @@ func (ch *CategoryHandler) handleGetPostsByCategoryName(w http.ResponseWriter, r
 	}
 	if userID == "" {
 		// Handle "not found" case
-		http.Error(w, "User nooot found", http.StatusNotFound)
+		// http.Error(w, "User nooot found", http.StatusNotFound)
+		xerrors.RenderErrorPage(w, http.StatusNotFound, xerrors.ErrNotFound)
 		return
 	}
+
 	var user *auth.User
 	if isLoggedIn {
 		// Get user data
@@ -175,13 +177,15 @@ func (ch *CategoryHandler) handleGetPostsByCategoryName(w http.ResponseWriter, r
 		user, err = auth.GetUserByID(db.Globaldb, userID)
 		if err != nil {
 			//log.Printf("Error fetching user: %v", err)
-			http.Error(w, "Error fetching user", http.StatusNotFound)
+			// http.Error(w, "Error fetching user", http.StatusNotFound)
+			xerrors.RenderErrorPage(w, http.StatusNotFound, xerrors.ErrNotFound)
 			return
 		} 
 
 		if user == nil {
 			// Handle "not found" case
-			http.Error(w, "User not found", http.StatusNotFound)
+			// http.Error(w, "User not found", http.StatusNotFound)
+			xerrors.RenderErrorPage(w, http.StatusNotFound, xerrors.ErrNotFound)
 			return
 		}
 	}	
