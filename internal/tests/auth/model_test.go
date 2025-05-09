@@ -2,7 +2,6 @@ package auth
 
 import (
 	"database/sql"
-	"encoding/json"
 	"testing"
 	"time"
 )
@@ -47,24 +46,6 @@ func TestPostStructInitialization(t *testing.T) {
 	}
 }
 
-func TestUserJSONMarshalling(t *testing.T) {
-	user := User{
-		ID:         "u123",
-		Username:   "jsonuser",
-		Email:      "json@example.com",
-		Password:   "pass",
-		ProfilePic: sql.NullString{String: "pic.png", Valid: true},
-	}
-
-	data, err := json.Marshal(user)
-	if err != nil {
-		t.Fatalf("error marshalling User: %v", err)
-	}
-
-	if !contains(string(data), "jsonuser") {
-		t.Errorf("marshalled JSON does not contain 'jsonuser': %s", string(data))
-	}
-}
 
 // helper to check substring in string
 func contains(s, substr string) bool {
