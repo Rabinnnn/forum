@@ -1,24 +1,25 @@
 package auth
 
 import (
-	"forum/internal/xerrors"
 	"log"
 	"net/http"
 	"path/filepath"
 	"strings"
+
+	"forum/internal/xerrors"
 )
 
-// secureStaticHandler prevents directory listing and restricts access to specific file types
 func SecureStaticHandler() http.Handler {
 	fs := http.FileServer(http.Dir("internal/web/static"))
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Block directory listing attempts
+		// Block directory listing
 		if strings.HasSuffix(r.URL.Path, "/") {
 			xerrors.RenderErrorPage(w, http.StatusForbidden, xerrors.ErrForbidden)
 			return
 		}
 
-		// Check file extension to allow only specific file types
+		// Allow only specific extensions
 		ext := filepath.Ext(r.URL.Path)
 		allowedExts := map[string]bool{
 			".css":   true,
@@ -39,9 +40,14 @@ func SecureStaticHandler() http.Handler {
 			return
 		}
 
-		log.Printf("Static file access: %s", r.URL.Path)
+		// Reject direct navigation (e.g., user typing URL in browser)
+		accept := r.Header.Get("Accept")
+		if strings.Contains(accept, "text/html") {
+			xerrors.RenderErrorPage(w, http.StatusForbidden, xerrors.ErrForbidden)
+			return
+		}
 
-		// Serve the file if all checks pass
+		log.Printf("Static file access: %s", r.URL.Path)
 		fs.ServeHTTP(w, r)
 	})
 }
