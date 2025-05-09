@@ -135,7 +135,7 @@ func main() {
 	// Ensure the correct number of arguments
 	if len(os.Args) != 1 {
 		fmt.Println("Invalid number of arguments.")
-		fmt.Println("Usage: go run ./cmd/main.go")
+		fmt.Println("Usage: go run main.go")
 		return
 	}
 

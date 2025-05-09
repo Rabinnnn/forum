@@ -63,8 +63,11 @@ func (h *AuthHandler) ProfileHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Extracted userID: %q", userID)
 
 	if userID == "" || userID == "/" {
-		log.Printf("Invalid userID, returning 404")
-		http.NotFound(w, r)
+		// log.Printf("Invalid userID, returning 404")
+		// http.NotFound(w, r)
+
+		log.Println("User not logged in, redirecting to login")
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 

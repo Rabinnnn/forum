@@ -13,7 +13,7 @@ import (
 	//"forum/xerrors"
 	"database/sql"
 	"forum/internal/db"
-	// "forum/internal/auth"
+	"forum/internal/auth"
 	"forum/internal/posts"
 	"forum/internal/xerrors"
 )
@@ -74,9 +74,10 @@ func (ch *CategoryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (ch *CategoryHandler) checkAuthStatus(r *http.Request) bool {
 	//cookie, err := r.Cookie("session_token")
-	_, err := r.Cookie("session_token")
+	_, err := r.Cookie("session_id")
 
 	if err != nil {
+		fmt.Println("Errrrr: %v", err)
 		return false
 	}
 	// _, err = xerrors.ValidateSession(db.Globaldb, cookie.Value)
@@ -145,47 +146,57 @@ func (ch *CategoryHandler) handleGetPostsByCategoryName(w http.ResponseWriter, r
 	}
 
 	isLoggedIn := ch.checkAuthStatus(r)
+
 	var currentUserID string
 
-	// if cookie, err := r.Cookie("session_token"); err == nil {
+	// if cookie, err := r.Cookie("session_id"); err == nil {
 	// 	if userID, err := xerrors.ValidateSession(db.Globaldb, cookie.Value); err == nil {
 	// 		currentUserID = userID
 	// 	}
 	// }
 
-	// userID, isLoggedIn := auth.GetUserIDFromSession(r)
-	// if userID == "" {
-	// 	// Handle "not found" case
-	// 	http.Error(w, "User nooot found", http.StatusNotFound)
-	// 	return
-	// }
-	// var user *auth.User
-	// if isLoggedIn {
-	// 	// Get user data
-	// 	//var err error
-	// 	user, err = auth.GetUserByID(database, userID)
-	// 	if err != nil {
-	// 		//log.Printf("Error fetching user: %v", err)
-	// 		http.Error(w, "Error fetching user", http.StatusNotFound)
-	// 		return
-	// 	} 
+	userID, isLoggedIn := auth.GetUserIDFromSession(r)
+	//  log.Printf("userIDDDDD: %v", userID)
 
-	// 	if user == nil {
-	// 		// Handle "not found" case
-	// 		http.Error(w, "User not found", http.StatusNotFound)
-	// 		return
-	// 	}
-	// }	
+
+	if !isLoggedIn{
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	if userID == "" {
+		// Handle "not found" case
+		http.Error(w, "User nooot found", http.StatusNotFound)
+		return
+	}
+	var user *auth.User
+	if isLoggedIn {
+		// Get user data
+		//var err error
+		user, err = auth.GetUserByID(db.Globaldb, userID)
+		if err != nil {
+			//log.Printf("Error fetching user: %v", err)
+			http.Error(w, "Error fetching user", http.StatusNotFound)
+			return
+		} 
+
+		if user == nil {
+			// Handle "not found" case
+			http.Error(w, "User not found", http.StatusNotFound)
+			return
+		}
+	}	
 	data := struct {
 		IsLoggedIn    bool
 		Posts         []posts.Post
-		// User       *auth.User
 		CurrentUserID string
+		User       *auth.User
+		// UserID string
 	}{
 		IsLoggedIn:    isLoggedIn,
 		Posts:         postss,
 		CurrentUserID: currentUserID,
-		// User: user,
+		User: user,
+		// UserID: userID,
 	}
 	
 	// tmpl, err := template.ParseFiles("templates/category_posts.html")
@@ -194,6 +205,11 @@ func (ch *CategoryHandler) handleGetPostsByCategoryName(w http.ResponseWriter, r
 	// 	xerrors.RenderErrorPage(w, http.StatusInternalServerError, xerrors.ErrTemplateExec)
 	// 	return
 	// }
+
+	log.Printf("Template dataaaaa: IsLoggedIn=%v", data.IsLoggedIn)
+	// log.Printf("userIDDDDD: %v", data.User)
+
+
 	basePath, _ := os.Getwd() // Gets the root directory where the app runs
 	templatePath := filepath.Join(basePath, "internal", "web", "templates", "category_posts.html")
 	tmpl, err := template.ParseFiles(templatePath)

@@ -1,9 +1,11 @@
 package comments
 
 import (
+	// "bytes"
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	// "io"
 
 	//"fmt"
 	"forum/internal/db"
@@ -130,7 +132,8 @@ func HandleEditComment(w http.ResponseWriter, r *http.Request) {
 	var ownerID string
 	err := db.Globaldb.QueryRow("SELECT user_id FROM comments WHERE id = ?", commentID).Scan(&ownerID)
 	if err == sql.ErrNoRows {
-		http.Error(w, "Comment not found", http.StatusNotFound)
+		log.Printf("CommentID: %v", commentID)
+		http.Error(w, "Comment not foundddd", http.StatusNotFound)
 		return
 	} else if err != nil {
 		log.Printf("Error checking comment ownership: %v", err)
@@ -198,7 +201,9 @@ func HandleDeleteComment(w http.ResponseWriter, r *http.Request) {
 	var ownerID string
 	err = db.Globaldb.QueryRow("SELECT user_id FROM comments WHERE id = ?", commentID).Scan(&ownerID)
 	if err == sql.ErrNoRows {
-		http.Error(w, "Comment not found", http.StatusNotFound)
+		log.Printf("CommentID: %v", commentID)
+
+		http.Error(w, "Comment notttt found", http.StatusNotFound)
 		return
 	} else if err != nil {
 		log.Printf("Error checking comment ownership: %v", err)
@@ -253,6 +258,25 @@ func HandleCommentReactions(w http.ResponseWriter, r *http.Request) {
 		CommentID string `json:"comment_id"`
 		Like      int `json:"like"` // 1 for like, 0 for dislike
 	}
+
+
+
+
+	// bodyBytes, x := io.ReadAll(r.Body)
+    // if x != nil {
+    //     http.Error(w, "Unable to read request body", http.StatusInternalServerError)
+    //     return
+    // }
+
+    // // Print the body content
+    // fmt.Println("Request Body:", string(bodyBytes))
+
+    // // Reset the request body so it can be read again
+    // r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
+
+
+
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		fmt.Println("Error:", err)
 		w.Header().Set("Content-Type", "application/json")
@@ -351,6 +375,8 @@ func HandleCommentReactions(w http.ResponseWriter, r *http.Request) {
 	// Get updated likes and dislikes counts
 	var likes, dislikes int
 	err = db.Globaldb.QueryRow("SELECT likes, dislikes FROM comments WHERE id = ?", req.CommentID).Scan(&likes, &dislikes)
+	fmt.Println("req.CommentID: %v", req.CommentID)
+
 	if err != nil {
 		fmt.Println("Error:", err)
 		w.Header().Set("Content-Type", "application/json")

@@ -99,6 +99,7 @@
                     </div>                 
 
                     <div class="post-content">
+                        <h2>{{.Title}}</h2>
                         <p>{{.Content}}</p>
                         {{if .ImagePath}}
                         <img src="{{.ImagePath}}" alt="Post image" class="post-image">
@@ -127,24 +128,7 @@
                     </button>
                     </div>
                 </div>
-                <div class="comments-section" id="comments-section-{{.ID}}" style="display: none;">
-                    {{if $.IsLoggedIn}}  <!-- Note the $.IsLoggedIn to access the root context -->
-                    <div class="comment-form-container">
-                        <form class="comment-form" onsubmit="submitComment(event, '{{.ID}}', '{{$.CurrentUserID}}' )">
-                            <textarea 
-                                class="comment-input" 
-                                placeholder="Write a comment..." 
-                                required
-                            ></textarea>
-                            <button type="submit" class="btn btn-primary">Post Comment</button>
-                        </form>
-                    </div>
-                    {{else}}
-                        <p class="login-prompt">Please <a href="/login">login</a> to comment.</p>
-                    {{end}}
-                    
-                    
-                </div>
+            
 
                 
                 {{end}}

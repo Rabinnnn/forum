@@ -65,7 +65,7 @@ $  docker build -t forum .
 
 - **Run the Docker Container**
 ```bash
-$  docker run -p 8080:8080 forum
+$  docker run -p 8080:3000 forum
 
 ```
 - Alternatively, instead of using docker you can run the program directly after cloning the repo by navigating to the directory then using the following command:

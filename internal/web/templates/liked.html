@@ -18,7 +18,7 @@
             </button>
             <div class="nav-right">
                 <button id="create-post-btn" class="btn btn-primary" onclick="window.location.href='/create'">
-                    <i class="fas fa-plus"></i>
+                    <i class="fas fa-plus"></i> Create Post
                 </button>
                
                 <button class="btn btn-outline" onclick="window.location.href='/profile/{{.UserID}}'">
@@ -54,6 +54,7 @@
                 </div>                 
 
                 <div class="post-content">
+                    <h2>{{.Title}}</h2>
                     <p>{{.Content}}</p>
                     {{if .ImagePath}}
                     <img src="{{.ImagePath}}" alt="Post image" class="post-image" onerror="this.onerror=null; this.src='/static/images/placeholder.png';">
@@ -102,5 +103,6 @@
         <li><a href="/category?name=Politics">Politics</a></li>
     </ul>
     </div>
+<script src="../static/js/like.js"></script>   
 </body>
 </html>

@@ -21,7 +21,7 @@
                         <i class="fas fa-plus"></i> Create Post
                     </button>
                     {{if .User}}
-                        <span class="username">Welcome, {{.User.Username}}</span>
+                        <span class="username" style="color:white;">Welcome, {{.User.Username}}</span>
                         <button class="btn btn-outline" onclick="window.location.href='/profile/{{.User.ID}}'">
                             <i class="fas fa-user"></i> Profile
                         </button>
@@ -76,13 +76,32 @@
         {{if .Posts}}
             <div class="posts-container">
                 {{range .Posts}}
-                    <div class="post">
-                        <h2>{{.Title}}</h2>
-                        <p>{{.Content}}</p>
-                        {{if .ImagePath}}
-                            <img src="{{.ImagePath}}" alt="Post image" class="post-image" onerror="this.onerror=null; this.src='/static/images/placeholder.png';">
-                        {{end}}
-                        
+                    <div class="post-card">
+                        <div class="post-header">
+                            <div class="post-avatar">
+                                {{if .ProfilePic.Valid}}
+                                    <img src="{{.ProfilePic.String}}" alt="Profile Picture" class="post-avatar-img">
+                                {{else}}
+                                    <div class="post-avatar-placeholder">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                {{end}}
+                            </div>
+                            <div class="post-info">
+    
+                                <h3>{{.Username}}</h3>
+                                <span class="timestamp">{{.PostTime}}</span>
+                            </div>
+                        </div>     
+
+                        <div class="post-content">
+                            <h2>{{.Title}}</h2>
+                            <p>{{.Content}}</p>
+                            {{if .ImagePath}}
+                            <img src="{{.ImagePath}}" alt="Post image" class="post-image">
+                            {{end}}
+                      </div>  
+                    </div>  
                         <div class="post-footer">
                             <div class="action-container">
                                 <button class="action-btn like-btn" onclick="event.stopPropagation();" data-post-id="{{.ID}}" data-action="like">
@@ -130,7 +149,10 @@
                                         </div>
                                         <p class="comment-content" id="comment-content-{{.ID}}">{{.GetContent}}</p>
                                     {{if $.IsLoggedIn}}
+                                    <!-- <p style="color: black;">UserID: {{ printf "%v" .UserID }}</p>
+                                    <p style="color: black;">User.ID: {{ printf "%v" $.User.ID }}</p> -->
                                         {{if eq .UserID $.User.ID}}
+                                      
                                         <!-- <div id="debug-user-id">Debug User ID: {{if $.User}}{{$.User.ID}}{{else}}NULL{{end}}</div> -->
 
                                         <div class="comment-actions">
@@ -167,7 +189,7 @@
                                 {{end}}
                             </div>
                         </div>
-                    </div>
+                    <!-- </div> -->
                 {{end}}
             </div>
         {{else}}
