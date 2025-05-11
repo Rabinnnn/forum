@@ -12,8 +12,8 @@ import (
 
 	//"forum/xerrors"
 	"database/sql"
-	"forum/internal/db"
 	"forum/internal/auth"
+	"forum/internal/db"
 	"forum/internal/posts"
 	"forum/internal/xerrors"
 )
@@ -23,7 +23,6 @@ var (
 	templates *template.Template
 	database  *sql.DB
 )
-
 
 type CategoryHandler struct{}
 
@@ -42,7 +41,7 @@ func (ch *CategoryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			xerrors.RenderErrorPage(w, http.StatusMethodNotAllowed, xerrors.ErrMethodNotAllowed)
 		}
 	case "/category":
-		
+
 		if r.Method == http.MethodGet {
 			categoryName := r.URL.Query().Get("name")
 			if categoryName == "" {
@@ -158,8 +157,7 @@ func (ch *CategoryHandler) handleGetPostsByCategoryName(w http.ResponseWriter, r
 	userID, isLoggedIn := auth.GetUserIDFromSession(r)
 	//  log.Printf("userIDDDDD: %v", userID)
 
-
-	if !isLoggedIn{
+	if !isLoggedIn {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
@@ -180,7 +178,7 @@ func (ch *CategoryHandler) handleGetPostsByCategoryName(w http.ResponseWriter, r
 			// http.Error(w, "Error fetching user", http.StatusNotFound)
 			xerrors.RenderErrorPage(w, http.StatusNotFound, xerrors.ErrNotFound)
 			return
-		} 
+		}
 
 		if user == nil {
 			// Handle "not found" case
@@ -188,21 +186,21 @@ func (ch *CategoryHandler) handleGetPostsByCategoryName(w http.ResponseWriter, r
 			xerrors.RenderErrorPage(w, http.StatusNotFound, xerrors.ErrNotFound)
 			return
 		}
-	}	
+	}
 	data := struct {
 		IsLoggedIn    bool
 		Posts         []posts.Post
 		CurrentUserID string
-		User       *auth.User
+		User          *auth.User
 		// UserID string
 	}{
 		IsLoggedIn:    isLoggedIn,
 		Posts:         postss,
 		CurrentUserID: currentUserID,
-		User: user,
+		User:          user,
 		// UserID: userID,
 	}
-	
+
 	// tmpl, err := template.ParseFiles("templates/category_posts.html")
 	// if err != nil {
 	// 	log.Printf("Error parsing category posts template: %v", err)
@@ -212,7 +210,6 @@ func (ch *CategoryHandler) handleGetPostsByCategoryName(w http.ResponseWriter, r
 
 	log.Printf("Template dataaaaa: IsLoggedIn=%v", data.IsLoggedIn)
 	// log.Printf("userIDDDDD: %v", data.User)
-
 
 	basePath, _ := os.Getwd() // Gets the root directory where the app runs
 	templatePath := filepath.Join(basePath, "internal", "web", "templates", "category_posts.html")
@@ -241,7 +238,7 @@ func (ch *CategoryHandler) getPostsByCategoryName(categoryName string) ([]posts.
         WHERE c.name = ?
     `, categoryName)
 	if err != nil {
-		            //  (SELECT COUNT(*) FROM comments WHERE post_id = p.id) AS Comments
+		//  (SELECT COUNT(*) FROM comments WHERE post_id = p.id) AS Comments
 
 		return nil, err
 	}
@@ -291,8 +288,6 @@ func (ch *CategoryHandler) getAllCategories() ([]posts.Category, error) {
 
 	return categories, rows.Err()
 }
-
-
 
 func FormatTimeAgo(t time.Time) string {
 	now := time.Now()

@@ -43,7 +43,7 @@ func HandleReactions(w http.ResponseWriter, r *http.Request) {
 	userID, isLoggedIn := auth.GetUserIDFromSession(r)
 	if userID == "" || !isLoggedIn {
 		// http.Error(w, "Unauthorized: Missing userID", http.StatusUnauthorized)
-		xerrors.RenderErrorPage(w, http.StatusUnauthorized, xerrors.ErrUnauthorized )
+		xerrors.RenderErrorPage(w, http.StatusUnauthorized, xerrors.ErrUnauthorized)
 		return
 	}
 

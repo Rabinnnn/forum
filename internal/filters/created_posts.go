@@ -69,7 +69,6 @@ func validateUserSession(w http.ResponseWriter, r *http.Request) (string, error)
 
 	userID, _ := auth.GetUserIDFromSession(r)
 
-
 	return userID, nil
 }
 
@@ -109,7 +108,6 @@ func fetchUserPostsForPosts(userID string) ([]posts.Post, error) {
 		var profilePic sql.NullString
 		var postTime time.Time
 		var totalCount int
-
 
 		err := rows.Scan(
 			&post.ID,
@@ -166,13 +164,13 @@ func fetchUserPostsForPosts(userID string) ([]posts.Post, error) {
 
 		// Handle NULL comments
 		if commentID.Valid && commentUserID.Valid && commentContent.Valid && commentCreatedAt.Valid {
-			comment := posts.Comment{ 
-				ID:         commentID.String,
-				UserID:     commentUserID.String,
-				Content:    commentContent.String,
-				CreatedAt:  commentCreatedAt.Time,
-			//	Username:   commentUsername.String,
-			//	ProfilePic: commentProfilePic,
+			comment := posts.Comment{
+				ID:        commentID.String,
+				UserID:    commentUserID.String,
+				Content:   commentContent.String,
+				CreatedAt: commentCreatedAt.Time,
+				//	Username:   commentUsername.String,
+				//	ProfilePic: commentProfilePic,
 			}
 			post.Comments = append(post.Comments, comment)
 		}
@@ -188,7 +186,6 @@ func fetchUserPostsForPosts(userID string) ([]posts.Post, error) {
 
 	return postsList, nil
 }
-
 
 func fetchUserPostsForLikes(userID string) ([]posts.Post, error) {
 	rows, err := db.Globaldb.Query(`
@@ -209,20 +206,20 @@ func fetchUserPostsForLikes(userID string) ([]posts.Post, error) {
     `, userID)
 
 	// rows, err := db.Globaldb.Query(`
-    //     SELECT p.id, p.user_id, p.title, p.content, p.image_path, p.created_at, p.likes, p.dislikes,
-    //     u.username, u.profile_pic,
-    //     GROUP_CONCAT(c.id) AS category_ids, GROUP_CONCAT(c.name) AS category_names,
-    //     com.id, com.user_id, com.content, com.created_at,
-    // 	(SELECT COUNT(*) FROM comments WHERE post_id = p.id) AS total_comments  -- Correct count of all comments per post
+	//     SELECT p.id, p.user_id, p.title, p.content, p.image_path, p.created_at, p.likes, p.dislikes,
+	//     u.username, u.profile_pic,
+	//     GROUP_CONCAT(c.id) AS category_ids, GROUP_CONCAT(c.name) AS category_names,
+	//     com.id, com.user_id, com.content, com.created_at,
+	// 	(SELECT COUNT(*) FROM comments WHERE post_id = p.id) AS total_comments  -- Correct count of all comments per post
 	// 	FROM posts p
 	// 	JOIN users u ON p.user_id = u.id
 	// 	LEFT JOIN post_categories pc ON p.id = pc.post_id
 	// 	LEFT JOIN categories c ON pc.category_id = c.id
 	// 	LEFT JOIN comments com ON p.id = com.post_id
 	// 	WHERE p.user_id = ?
-    //     GROUP BY p.id, com.id
-    //     ORDER BY p.created_at DESC
-    // `, userID)
+	//     GROUP BY p.id, com.id
+	//     ORDER BY p.created_at DESC
+	// `, userID)
 
 	if err != nil {
 		return nil, err

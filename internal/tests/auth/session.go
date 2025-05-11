@@ -1,9 +1,9 @@
 package auth
 
 import (
+	"github.com/google/uuid"
 	"log"
 	"net/http"
-	"github.com/google/uuid"
 )
 
 var sessions = make(map[string]string) // sessionID -> userID

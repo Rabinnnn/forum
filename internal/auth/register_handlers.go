@@ -55,7 +55,7 @@ func (h *AuthHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 			errors.PasswordError = "Password is required."
 		} else if password != confirmPassword {
 			errors.PasswordError = "Passwords do not match."
-		}else if !ValidatePassword(password) {
+		} else if !ValidatePassword(password) {
 			errors.PasswordError = "Password must be at least 8 characters, comprising of capital and small letters, numbers, and special characters"
 			//hasError = true
 		}

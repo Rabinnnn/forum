@@ -26,7 +26,7 @@ func NewCommentHandler(db *sql.DB) *CommentHandler {
 }
 
 func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
-	
+
 	// Check if user is logged in
 	userID, ok := auth.GetUserIDFromSession(r)
 	if !ok {
@@ -103,9 +103,8 @@ func (h *CommentHandler) GetCommentsForPost(w http.ResponseWriter, r *http.Reque
 	json.NewEncoder(w).Encode(response)
 }
 
-
 func HandleEditComment(w http.ResponseWriter, r *http.Request) {
-	
+
 	userID, _ := auth.GetUserIDFromSession(r)
 
 	if userID == "" {
@@ -175,7 +174,6 @@ func HandleEditComment(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, r.Header.Get("Referer"), http.StatusSeeOther)
 	//http.Redirect(w, r, "/", http.StatusSeeOther) // Redirects to the homepage or correct page
 }
-
 
 func HandleDeleteComment(w http.ResponseWriter, r *http.Request) {
 	userID, _ := auth.GetUserIDFromSession(r)
@@ -252,8 +250,6 @@ func HandleDeleteComment(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, r.Header.Get("Referer"), http.StatusSeeOther)
 }
 
-
-
 func HandleCommentReactions(w http.ResponseWriter, r *http.Request) {
 	userID, _ := auth.GetUserIDFromSession(r)
 
@@ -266,10 +262,8 @@ func HandleCommentReactions(w http.ResponseWriter, r *http.Request) {
 
 	var req struct {
 		CommentID string `json:"comment_id"`
-		Like      int `json:"like"` // 1 for like, 0 for dislike
+		Like      int    `json:"like"` // 1 for like, 0 for dislike
 	}
-
-
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		fmt.Println("Error:", err)
@@ -322,13 +316,13 @@ func HandleCommentReactions(w http.ResponseWriter, r *http.Request) {
 				json.NewEncoder(w).Encode(map[string]string{"error": "Database error (delete)"})
 				return
 			}
-			if req.Like == 1{
+			if req.Like == 1 {
 				_, err = db.Globaldb.Exec("UPDATE comments SET likes = likes - 1 WHERE id = ?", req.CommentID)
 				if err != nil {
 					http.Error(w, "Database error4.1", http.StatusInternalServerError)
 					return
 				}
-			}else{
+			} else {
 				_, err = db.Globaldb.Exec("UPDATE comments SET dislikes = dislikes - 1 WHERE id = ?", req.CommentID)
 				if err != nil {
 					http.Error(w, "Database error4.2", http.StatusInternalServerError)
@@ -345,8 +339,7 @@ func HandleCommentReactions(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			
-			if req.Like == 1{
+			if req.Like == 1 {
 				_, err = db.Globaldb.Exec("UPDATE comments SET likes = likes + 1 WHERE id = ?", req.CommentID)
 				if err != nil {
 					// http.Error(w, "Database error4.1", http.StatusInternalServerError)
@@ -355,7 +348,7 @@ func HandleCommentReactions(w http.ResponseWriter, r *http.Request) {
 				}
 				_, err = db.Globaldb.Exec("UPDATE comments SET dislikes = dislikes - 1 WHERE id = ?", req.CommentID)
 
-			}else{
+			} else {
 				_, err = db.Globaldb.Exec("UPDATE comments SET dislikes = dislikes + 1 WHERE id = ?", req.CommentID)
 				if err != nil {
 					// http.Error(w, "Database error4.1", http.StatusInternalServerError)

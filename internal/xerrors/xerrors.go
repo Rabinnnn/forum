@@ -28,7 +28,7 @@ const (
 	ErrFileTooLarge     = "File size exceeds the 10MB limit. Please upload a smaller image."
 	ErrInvalidFileType  = "Invalid file type. Only JPEG, PNG, and GIF images are allowed."
 	ErrNotFound         = "Not Found."
-	ErrBadRequest		= "Bad Request."
+	ErrBadRequest       = "Bad Request."
 )
 
 func RenderErrorPage(w http.ResponseWriter, code int, message string) {

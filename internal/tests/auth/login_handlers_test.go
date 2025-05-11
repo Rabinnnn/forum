@@ -3,12 +3,12 @@ package auth
 import (
 	"bytes"
 	"database/sql"
+	"github.com/DATA-DOG/go-sqlmock"
+	"golang.org/x/crypto/bcrypt"
 	"html/template"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"github.com/DATA-DOG/go-sqlmock"
-	"golang.org/x/crypto/bcrypt"
 )
 
 func TestLoginHandler_Get(t *testing.T) {

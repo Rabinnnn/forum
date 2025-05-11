@@ -177,7 +177,6 @@ func main() {
 	// Serve static files (CSS, JS, images)
 	http.Handle("/static/", http.StripPrefix("/static/", auth.SecureStaticHandler()))
 
-
 	// Create uploads directory
 	if err := os.MkdirAll("internal/web/static/uploads", 0o755); err != nil {
 		log.Printf("Warning: Failed to create uploads directory: %v", err)

@@ -21,8 +21,8 @@ func NewPostService(db *sql.DB) *PostService {
 }
 
 func GeneratePostID() int {
-    rand.Seed(time.Now().UnixNano()) // Ensure different values on each run
-    return rand.Intn(1000000) + 1 // Generate a random ID between 1 and 1,000,000
+	rand.Seed(time.Now().UnixNano()) // Ensure different values on each run
+	return rand.Intn(1000000) + 1    // Generate a random ID between 1 and 1,000,000
 }
 func (s *PostService) CreatePost(post *Post) error {
 	tx, err := s.db.Begin()
@@ -49,7 +49,7 @@ func (s *PostService) CreatePost(post *Post) error {
 	}
 
 	//Insert categories
-	fmt.Println("Post categories:",post.Categories)
+	fmt.Println("Post categories:", post.Categories)
 	for _, category := range post.Categories {
 		_, err = tx.Exec(`
 			INSERT INTO post_categories (post_id, category_id)
@@ -59,7 +59,6 @@ func (s *PostService) CreatePost(post *Post) error {
 			return fmt.Errorf("failed to insert category %d: %v", category.ID, err)
 		}
 	}
-
 
 	// Ensure all unique category IDs are inserted for a post
 	// unique := make(map[int]bool)
@@ -80,7 +79,6 @@ func (s *PostService) CreatePost(post *Post) error {
 	// 		return fmt.Errorf("failed to insert category %d: %v", category.ID, err)
 	// 	}
 	// }
-
 
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("failed to commit transaction: %v", err)

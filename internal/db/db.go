@@ -98,7 +98,6 @@ func InitializeDB() (*sql.DB, error) {
 		}
 	}
 
-
 	// Commit the transaction
 	if err := tx.Commit(); err != nil {
 		return nil, fmt.Errorf("error committing transaction: %v", err)
@@ -108,7 +107,7 @@ func InitializeDB() (*sql.DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert default categories: %v", err)
 	}
-	
+
 	return Globaldb, nil
 }
 
