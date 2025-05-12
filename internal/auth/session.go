@@ -1,14 +1,16 @@
 package auth
 
 import (
-	"github.com/google/uuid"
 	"log"
 	"net/http"
+
+	"github.com/google/uuid"
 )
 
 var sessions = make(map[string]string) // sessionID -> userID
 
 func CreateSession(w http.ResponseWriter, userID string) {
+	// checks for user sessions to have just one
 	for sessionID, id := range sessions {
 		if id == userID {
 			delete(sessions, sessionID)
