@@ -9,6 +9,14 @@ import (
 var sessions = make(map[string]string) // sessionID -> userID
 
 func CreateSession(w http.ResponseWriter, userID string) {
+	for sessionID, id := range sessions {
+		if id == userID {
+			delete(sessions, sessionID)
+			log.Printf("Deleted existing session: ID=%s for user=%s", sessionID, userID)
+			break // Assuming one session per user; remove `break` if multiple could exist
+		}
+	}
+
 	sessionID := uuid.New().String()
 	sessions[sessionID] = userID
 
